@@ -1,0 +1,6 @@
+@BuilliardServer_HostAddress = http://localhost:5237
+
+GET {{BuilliardServer_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
