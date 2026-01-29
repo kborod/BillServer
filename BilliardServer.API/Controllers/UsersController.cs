@@ -23,5 +23,13 @@ namespace BilliardServer.API.Controllers
 
             return Ok(users);
         }
+
+        [HttpPost]
+        public async Task<ActionResult<UserResponse>> AddUser(string name, int avatar)
+        {
+            var user = await _usersService.Create(name, avatar);
+
+            return Ok(new UserResponse(user.Id, user.Name, user.Avatar));
+        }
     }
 }

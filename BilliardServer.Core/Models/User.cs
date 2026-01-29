@@ -6,25 +6,24 @@
         public string Name { get; } = string.Empty;
         public int Avatar { get; } = 1;
 
-        private User(int id, string name, int avatar)
+        public User(int id, string name, int avatar)
         {
+            var validateResult = ValidateParamsForNew(name, avatar);
+            if (string.IsNullOrEmpty(validateResult) == false)
+                throw new Exception(validateResult);
+
             Id = id;
             Name = name;
             Avatar = avatar;
         }
 
-        public static (User User, string Error) Create(int id, string name, int avatar)
+        public static string ValidateParamsForNew(string name, int avatar)
         {
-            var error = string.Empty;
-
-            if (string.IsNullOrEmpty(name))
-                error = "Name cant be empty";
+            if (string.IsNullOrEmpty(name) || name.Length < 1)
+                return "Name length must be more or equal 1";
             if (avatar < 1)
-                error = "Avatar cant be lower than 1";
-
-            var user = new User(id, name, avatar);
-
-            return (user, error);
+                return "Avatar cant be lower than 1";
+            return null;
         }
     }
 }

@@ -21,23 +21,24 @@ namespace BilliardServer.DataAccess.Repositories
                 .ToListAsync();
 
             var users = userEntities
-                .Select(e => User.Create(e.Id, e.Name, e.Avatar).User)
+                .Select(e => new User(e.Id, e.Name, e.Avatar))
                 .ToList();
 
             return users;
         }
 
-        public async Task<int> Create(User user)
+        public async Task<User> Create(string name, int avatar)
         {
             var userEntity = new UserEntity
             {
-                Name = user.Name
+                Name = name, 
+                Avatar = avatar
             };
 
             await _context.Users.AddAsync(userEntity);
             await _context.SaveChangesAsync();
 
-            return userEntity.Id;
+            return new User(userEntity.Id, userEntity.Name, userEntity.Avatar);
         }
 
         public async Task<int> Update(int id, string name, int avatar)

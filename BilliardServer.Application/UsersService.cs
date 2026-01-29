@@ -17,9 +17,14 @@ namespace Billiard.Application
             return await _usersRepository.GetAll();
         }
 
-        public async Task<int> Create(User user)
+        public async Task<User> Create(string name, int avatar)
         {
-            return await _usersRepository.Create(user);
+            var validateResult = User.ValidateParamsForNew(name, avatar);
+            if (string.IsNullOrEmpty(validateResult) == false)
+            {
+                throw new Exception(validateResult);
+            }
+            return await _usersRepository.Create(name, avatar);
         }
 
         public async Task<int> Update(int id, string name, int avatar)
