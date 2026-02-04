@@ -1,8 +1,6 @@
 ﻿using Billiard.Application;
-using BilliardServer.API.Controllers;
 using BilliardServer.Application.Features.Users;
 using BilliardServer.Core.Abstractions;
-using BilliardServer.Infrastructure;
 using BilliardServer.Infrastructure;
 using BilliardServer.Infrastructure.Entities;
 using BilliardServer.Infrastructure.Repositories;
@@ -182,10 +180,7 @@ public partial class Program
             options.AddPolicy(name: MyAllowSpecificOrigins,
                 policy =>
                 {
-                    policy.WithOrigins(
-                        "http://localhost",
-                        "https://localhost"
-                        )
+                    policy.SetIsOriginAllowed(_ => true)
                           .AllowAnyHeader()
                           .AllowAnyMethod()
                           .AllowCredentials();
