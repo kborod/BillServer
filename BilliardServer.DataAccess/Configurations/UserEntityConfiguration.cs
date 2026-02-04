@@ -1,8 +1,8 @@
-﻿using BilliardServer.DataAccess.Entities;
+﻿using BilliardServer.Infrastructure.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace BilliardServer.DataAccess.Configurations
+namespace BilliardServer.Infrastructure.Configurations
 {
     internal class UserEntityConfiguration : IEntityTypeConfiguration<UserEntity>
     {

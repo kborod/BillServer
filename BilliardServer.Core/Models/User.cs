@@ -17,12 +17,12 @@
             Avatar = avatar;
         }
 
-        public static string ValidateParamsForNew(string name, int avatar)
+        public static string? ValidateParamsForNew(string name, int avatar)
         {
             if (string.IsNullOrEmpty(name) || name.Length < 1)
                 return "Name length must be more or equal 1";
-            if (avatar < 1)
-                return "Avatar cant be lower than 1";
+            if (avatar < 0)
+                return "Avatar cant be lower than 0";
             return null;
         }
     }

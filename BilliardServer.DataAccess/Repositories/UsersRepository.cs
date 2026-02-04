@@ -1,17 +1,31 @@
 ﻿using BilliardServer.Core.Abstractions;
+using BilliardServer.Core.Common;
 using BilliardServer.Core.Models;
-using BilliardServer.DataAccess.Entities;
+using BilliardServer.Infrastructure.Entities;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
-namespace BilliardServer.DataAccess.Repositories
+namespace BilliardServer.Infrastructure.Repositories
 {
     public class UsersRepository : IUsersRepository
     {
         private readonly BilliardDbContext _context;
+        private readonly UserManager<UserEntity> _userManager;
 
-        public UsersRepository(BilliardDbContext context)
+        public UsersRepository(BilliardDbContext context, UserManager<UserEntity> userManager)
         {
             _context = context;
+            _userManager = userManager;
+        }
+
+        public async Task<Result<User?>> GetByEmail(string email)
+        {
+            var entity = await _userManager.FindByEmailAsync(email);
+
+            if (entity == null)
+                return Result<User?>.Fail("User not found");
+
+            return Result<User?>.Ok(new User(entity.Id, entity.Name, entity.Avatar));
         }
 
         public async Task<List<User>> GetAll()

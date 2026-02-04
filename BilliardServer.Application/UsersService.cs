@@ -1,4 +1,5 @@
 ﻿using BilliardServer.Core.Abstractions;
+using BilliardServer.Core.Common;
 using BilliardServer.Core.Models;
 
 namespace Billiard.Application
@@ -12,6 +13,11 @@ namespace Billiard.Application
             _usersRepository = usersRepository;
         }
 
+        public async Task<Result<User?>> GetByEmail(string email)
+        {
+            return await _usersRepository.GetByEmail(email);
+        }
+
         public async Task<List<User>> GetAll()
         {
             return await _usersRepository.GetAll();
@@ -19,11 +25,6 @@ namespace Billiard.Application
 
         public async Task<User> Create(string name, int avatar)
         {
-            var validateResult = User.ValidateParamsForNew(name, avatar);
-            if (string.IsNullOrEmpty(validateResult) == false)
-            {
-                throw new Exception(validateResult);
-            }
             return await _usersRepository.Create(name, avatar);
         }
 

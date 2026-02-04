@@ -1,8 +1,9 @@
-﻿namespace BilliardServer.DataAccess.Entities
+﻿using Microsoft.AspNetCore.Identity;
+
+namespace BilliardServer.Infrastructure.Entities
 {
-    public class UserEntity
+    public class UserEntity : IdentityUser<int>
     {
-        public int Id { get; set; }
         public string Name { get; set; } = string.Empty;
         public int Avatar { get; set; }
     }

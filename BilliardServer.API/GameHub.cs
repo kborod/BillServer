@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.SignalR;
 using System.Diagnostics;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace BuilliardServer
 {
@@ -69,9 +68,9 @@ namespace BuilliardServer
 
     public class GameState
     {
-        public string Player1 { get; set; }
-        public string Player2 { get; set; }
-        public string Turn { get; set; } // Чей ход
-        public object LastMove { get; set; } // Данные хода (JSON или модель)
+        public required string Player1 { get; set; }
+        public required string Player2 { get; set; }
+        public required string Turn { get; set; } // Чей ход
+        public required object LastMove { get; set; } // Данные хода (JSON или модель)
     }
 }
