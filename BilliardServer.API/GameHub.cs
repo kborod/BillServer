@@ -1,8 +1,11 @@
-﻿using Microsoft.AspNetCore.SignalR;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.SignalR;
 using System.Diagnostics;
+using System.Security.Claims;
 
 namespace BuilliardServer
 {
+    [Authorize]
     public class GameHub : Hub
     {
         // Словарь для хранения состояний матчей (в реальности используйте DB или Redis для масштабируемости)
@@ -11,6 +14,8 @@ namespace BuilliardServer
         // Подключение игрока к матчу
         public async Task JoinMatch(string matchId, string playerId)
         {
+            var userId = Context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
             Debug.WriteLine($"Player {playerId} is trying to join match {matchId}");
             await Task.Yield();
 
@@ -36,6 +41,9 @@ namespace BuilliardServer
         // Отправка хода
         public async Task MakeMove(string matchId, string playerId, object moveData)
         {
+            var userId = Context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+
             if (_matches.TryGetValue(matchId, out var state) && state.Turn == playerId)
             {
                 // Обработка хода (ваша логика игры)
@@ -59,9 +67,22 @@ namespace BuilliardServer
 
         public override async Task OnConnectedAsync()
         {
+            var userId = Context.User!.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                       ?? Context.User.Identity?.Name;
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                Context.Abort(); // Отключаем без валидного пользователя
+                Debug.WriteLine("OnConnectedAsync aborted: no valid user ID");
+                return;
+            }
+
+            // Можно сохранить ConnectionId → playerId в кэше/БД
+            await base.OnConnectedAsync();
+
             string connectionId = Context.ConnectionId;
             Debug.WriteLine($"OnConnectedAsync {connectionId}");
-            await Clients.Client(connectionId).SendAsync("ReceiveMessage", $"You are connected with ID: {connectionId}");
+            await Clients.Client(connectionId).SendAsync("ReceiveMessage", $"You are connected with ID: {connectionId}. Your ID: {userId}");
             await base.OnConnectedAsync();
         }
     }

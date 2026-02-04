@@ -108,6 +108,20 @@ public partial class Program
                     IssuerSigningKey = new SymmetricSecurityKey(
                         Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
                 };
+                options.Events = new JwtBearerEvents
+                {
+                    OnMessageReceived = context =>
+                    {
+                        var accessToken = context.Request.Query["access_token"];
+
+                        if (!string.IsNullOrEmpty(accessToken) &&
+                            context.HttpContext.Request.Path.StartsWithSegments("/gameHub"))
+                        {
+                            context.Token = accessToken;
+                        }
+                        return Task.CompletedTask;
+                    }
+                };
             });
 
         builder.Services
@@ -118,47 +132,15 @@ public partial class Program
                     options.ClientSecret = "3d06a2c3a3b24170954d6f38d517288c";
                     options.SignInScheme = IdentityConstants.ExternalScheme;
                     //options.SaveTokens = false;   // Если только логин, то достаточно false, если далее будем работать с апи yandex, то true
-                    //options.CallbackPath = "/signin-yandex";
                     //options.Events = new OAuthEvents
                     //{
                     //    OnCreatingTicket = async context =>
                     //    {
                     //        Debug.WriteLine("Yandex OnCreatingTicket called");
-                    //        // Здесь можно дообогатить claims, если нужно
-                    //        // Например, запросить дополнительные данные по access_token
-
-                    //        //var request = new HttpRequestMessage(HttpMethod.Get, "https://login.yandex.ru/info?format=json");
-                    //        //request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", context.AccessToken);
-
-                    //        //var response = await context.Backchannel.SendAsync(request, context.HttpContext.RequestAborted);
-                    //        //response.EnsureSuccessStatusCode();
-
-                    //        //var userJson = await response.Content.ReadAsStringAsync();
-                    //        //var user = System.Text.Json.JsonDocument.Parse(userJson);
-
-                    //        //var id = user.RootElement.GetProperty("id").GetString();
-                    //        //context.Identity?.AddClaim(new Claim(ClaimTypes.NameIdentifier, id));
-
-                    //        //if (user.RootElement.TryGetProperty("display_name", out var name))
-                    //        //{
-                    //        //    context.Identity?.AddClaim(new Claim(ClaimTypes.Name, name.GetString() ?? ""));
-                    //        //}
-
-                    //        //if (user.RootElement.TryGetProperty("default_email", out var email))
-                    //        //{
-                    //        //    context.Identity?.AddClaim(new Claim(ClaimTypes.Email, email.GetString() ?? ""));
-                    //        //}
-
-                    //        // и т.д.
                     //    },
-
-                    //    // Опционально: обработка ошибок
                     //    OnRemoteFailure = context =>
                     //    {
                     //        Debug.WriteLine($"Yandex OnRemoteFailure called{Uri.EscapeDataString(context.Failure?.Message ?? "Unknown error")}");
-                    //        //context.Response.Redirect("/error?message=" + Uri.EscapeDataString(context.Failure?.Message ?? "Unknown error"));
-                    //        //context.HandleResponse();
-                    //        return Task.CompletedTask;
                     //    }
                     //};
                 })
