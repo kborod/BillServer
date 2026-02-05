@@ -1,6 +1,7 @@
 ﻿using BilliardServer.Core.Abstractions;
 using BilliardServer.Core.Common;
 using BilliardServer.Core.Models;
+using BilliardServer.DataAccess.Extensions;
 using BilliardServer.Infrastructure.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -25,7 +26,7 @@ namespace BilliardServer.Infrastructure.Repositories
             if (entity == null)
                 return Result<User?>.Fail("User not found");
 
-            return Result<User?>.Ok(new User(entity.Id, entity.Name, entity.Avatar));
+            return Result<User?>.Ok(entity.CreateUser());
         }
 
         public async Task<List<User>> GetAll()
@@ -35,25 +36,25 @@ namespace BilliardServer.Infrastructure.Repositories
                 .ToListAsync();
 
             var users = userEntities
-                .Select(e => new User(e.Id, e.Name, e.Avatar))
+                .Select(e => e.CreateUser())
                 .ToList();
 
             return users;
         }
 
-        public async Task<User> Create(string name, int avatar)
-        {
-            var userEntity = new UserEntity
-            {
-                Name = name, 
-                Avatar = avatar
-            };
+        //public async Task<User> Create(string name, int avatar)
+        //{
+        //    var userEntity = new UserEntity
+        //    {
+        //        Name = name, 
+        //        Avatar = avatar
+        //    };
 
-            await _context.Users.AddAsync(userEntity);
-            await _context.SaveChangesAsync();
+        //    await _context.Users.AddAsync(userEntity);
+        //    await _context.SaveChangesAsync();
 
-            return new User(userEntity.Id, userEntity.Name, userEntity.Avatar);
-        }
+        //    return userEntity.CreateUser();
+        //}
 
         public async Task<int> Update(int id, string name, int avatar)
         {

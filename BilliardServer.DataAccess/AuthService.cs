@@ -88,10 +88,11 @@ namespace BilliardServer.Infrastructure
             {
                 UserName = Guid.NewGuid().ToString("N"),
                 Name = name,
-                Avatar = avatar
+                Avatar = avatar,
+                Email = email
             };
 
-            var result = password != null
+            var result = !string.IsNullOrEmpty(password)
                 ? await _userManager.CreateAsync(userEntity, password)
                 : await _userManager.CreateAsync(userEntity);
 

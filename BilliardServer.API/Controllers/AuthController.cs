@@ -29,7 +29,7 @@ namespace BilliardServer.API.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterDto dto)
         {
-            var registerResult = await _sender.Send(new RegisterByEmailCommand(dto.Email, dto.Password, dto.Name));
+            var registerResult = await _sender.Send(new RegisterByEmailCommand(dto.Name, dto.Email, dto.Password));
 
             if (!registerResult.IsSuccess)
                 return BadRequest(registerResult.Error);

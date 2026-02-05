@@ -2,7 +2,7 @@
 {
     public record UserResponse
     (
-        int Id,
+        long Id,
         string Name,
         int Avatar
     );

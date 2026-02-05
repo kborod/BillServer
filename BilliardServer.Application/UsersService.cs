@@ -23,10 +23,10 @@ namespace Billiard.Application
             return await _usersRepository.GetAll();
         }
 
-        public async Task<User> Create(string name, int avatar)
-        {
-            return await _usersRepository.Create(name, avatar);
-        }
+        //public async Task<User> Create(string name, int avatar)
+        //{
+        //    return await _usersRepository.Create(name, avatar);
+        //}
 
         public async Task<int> Update(int id, string name, int avatar)
         {

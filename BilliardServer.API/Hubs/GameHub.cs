@@ -2,8 +2,9 @@
 using Microsoft.AspNetCore.SignalR;
 using System.Diagnostics;
 using System.Security.Claims;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
-namespace BuilliardServer
+namespace BilliardServer.API.Hubs
 {
     [Authorize]
     public class GameHub : Hub
@@ -12,12 +13,15 @@ namespace BuilliardServer
         private static readonly Dictionary<string, GameState> _matches = new();
 
         // Подключение игрока к матчу
+        [Authorize]
         public async Task JoinMatch(string matchId, string playerId)
         {
             var userId = Context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
             Debug.WriteLine($"Player {playerId} is trying to join match {matchId}");
             await Task.Yield();
+
+            await Clients.Client(Context.ConnectionId).SendAsync($"{matchId}_{playerId}");
 
 
             //await Groups.AddToGroupAsync(Context.ConnectionId, matchId);

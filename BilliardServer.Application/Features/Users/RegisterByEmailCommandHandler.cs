@@ -5,11 +5,11 @@ using MediatR;
 
 namespace BilliardServer.Application.Features.Users
 {
-    public class RegisterByEmailCimmandHandler : IRequestHandler<RegisterByEmailCommand, Result<User>>
+    public class RegisterByEmailCommandHandler : IRequestHandler<RegisterByEmailCommand, Result<User>>
     {
         private readonly IAuthService _authService;
 
-        public RegisterByEmailCimmandHandler(IAuthService authService)
+        public RegisterByEmailCommandHandler(IAuthService authService)
         {
             _authService = authService;
         }

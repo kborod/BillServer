@@ -1,10 +1,10 @@
 ﻿using Billiard.Application;
+using BilliardServer.API.Hubs;
 using BilliardServer.Application.Features.Users;
 using BilliardServer.Core.Abstractions;
 using BilliardServer.Infrastructure;
 using BilliardServer.Infrastructure.Entities;
 using BilliardServer.Infrastructure.Repositories;
-using BuilliardServer;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;

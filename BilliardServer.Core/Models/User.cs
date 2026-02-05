@@ -2,11 +2,11 @@
 {
     public class User
     {
-        public int Id { get; }
+        public long Id { get; }
         public string Name { get; } = string.Empty;
         public int Avatar { get; } = 1;
 
-        public User(int id, string name, int avatar)
+        public User(long id, string name, int avatar)
         {
             var validateResult = ValidateParamsForNew(name, avatar);
             if (string.IsNullOrEmpty(validateResult) == false)
@@ -19,8 +19,8 @@
 
         public static string? ValidateParamsForNew(string name, int avatar)
         {
-            if (string.IsNullOrEmpty(name) || name.Length < 1)
-                return "Name length must be more or equal 1";
+            if (string.IsNullOrEmpty(name) || name.Length < 3 || name.Length > 10)
+                return "Name must be between 3 and 10 characters long";
             if (avatar < 0)
                 return "Avatar cant be lower than 0";
             return null;

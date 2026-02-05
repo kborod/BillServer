@@ -2,7 +2,7 @@
 
 namespace BilliardServer.Infrastructure.Entities
 {
-    public class UserRole : IdentityRole<int>
+    public class UserRole : IdentityRole<long>
     {
     }
 }
