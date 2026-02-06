@@ -1,101 +1,65 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using BilliardServer.API.Hubs.ReliableMessageDelivery;
+using BilliardServer.Core.Dto.Hub;
+using BilliardServer.Core.Dto.Hub.Requests;
+using BilliardServer.Core.Dto.Hub.Responses;
+using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using System.Diagnostics;
 using System.Security.Claims;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
+using System.Text.Json;
 
 namespace BilliardServer.API.Hubs
 {
     [Authorize]
-    public class GameHub : Hub
+    public class GameHub : Hub<IResponseSender>
     {
-        // Словарь для хранения состояний матчей (в реальности используйте DB или Redis для масштабируемости)
-        private static readonly Dictionary<string, GameState> _matches = new();
+        private readonly ReliableMessageDeliveryService _messagesControl;
+        private readonly ISender _sender;
 
-        // Подключение игрока к матчу
-        [Authorize]
-        public async Task JoinMatch(string matchId, string playerId)
+        public GameHub(ReliableMessageDeliveryService messagesControl, ISender sender)
         {
-            var userId = Context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-            Debug.WriteLine($"Player {playerId} is trying to join match {matchId}");
-            await Task.Yield();
-
-            await Clients.Client(Context.ConnectionId).SendAsync($"{matchId}_{playerId}");
-
-
-            //await Groups.AddToGroupAsync(Context.ConnectionId, matchId);
-
-            //if (!_matches.ContainsKey(matchId))
-            //{
-            //    _matches[matchId] = new GameState { Player1 = playerId, Turn = playerId };
-            //}
-            //else
-            //{
-            //    var state = _matches[matchId];
-            //    if (state.Player2 == null)
-            //    {
-            //        state.Player2 = playerId;
-            //    }
-            //    // Уведомляем обоих игроков о старте
-            //    await Clients.Group(matchId).SendAsync("MatchStarted", state);
-            //}
+            _messagesControl = messagesControl;
+            _sender = sender;
         }
 
-        // Отправка хода
-        public async Task MakeMove(string matchId, string playerId, object moveData)
+        public async Task ProcessRequest(RequestEnvelope requestEnvelope)
         {
-            var userId = Context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var userId = GetUserId();
 
+            var requests = await _messagesControl.GetUnprocessedRequests(requestEnvelope, userId, Clients.Caller);
 
-            if (_matches.TryGetValue(matchId, out var state) && state.Turn == playerId)
+            if (requests == null)
+                return;
+
+            foreach (var request in requests)
             {
-                // Обработка хода (ваша логика игры)
-                // Например, обновляем состояние
-                state.LastMove = moveData;
-                state.Turn = state.Player1 == playerId ? state.Player2 : state.Player1;
-
-                // Отправляем обновление всем в группе (матче)
-                await Clients.Group(matchId).SendAsync("MoveReceived", moveData, state.Turn);
+                await _sender.Send(requestEnvelope.ToCommand(userId));
             }
         }
 
-        // Отключение (handle disconnect)
-        public override async Task OnDisconnectedAsync(Exception exception)
+        private long GetUserId()
         {
-            string connectionId = Context.ConnectionId;
-            Debug.WriteLine($"OnDisconnectedAsync {connectionId}");
-            // Найти матч по ConnectionId и обработать disconnect (уведомить оппонента)
-            await base.OnDisconnectedAsync(exception);
+            var userIdStr = Context.User!.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdStr) || !long.TryParse(userIdStr, out var userId))
+            {
+                Debug.WriteLine("GetUserId failed: invalid user ID claim");
+                throw new Exception("Invalid user ID");
+            }
+                
+            return userId;
         }
 
         public override async Task OnConnectedAsync()
         {
-            var userId = Context.User!.FindFirst(ClaimTypes.NameIdentifier)?.Value
-                       ?? Context.User.Identity?.Name;
-
-            if (string.IsNullOrEmpty(userId))
-            {
-                Context.Abort(); // Отключаем без валидного пользователя
-                Debug.WriteLine("OnConnectedAsync aborted: no valid user ID");
-                return;
-            }
-
-            // Можно сохранить ConnectionId → playerId в кэше/БД
-            await base.OnConnectedAsync();
-
-            string connectionId = Context.ConnectionId;
-            Debug.WriteLine($"OnConnectedAsync {connectionId}");
-            await Clients.Client(connectionId).SendAsync("ReceiveMessage", $"You are connected with ID: {connectionId}. Your ID: {userId}");
+            await Clients.Caller.Send(ResponseEnvelope.Create(new MessageReceivedResponseDto(77)));
             await base.OnConnectedAsync();
         }
-    }
 
-    public class GameState
-    {
-        public required string Player1 { get; set; }
-        public required string Player2 { get; set; }
-        public required string Turn { get; set; } // Чей ход
-        public required object LastMove { get; set; } // Данные хода (JSON или модель)
+        public override async Task OnDisconnectedAsync(Exception? exception)
+        {
+            // Логирование причины отключения
+            await base.OnDisconnectedAsync(exception);
+        }
     }
 }

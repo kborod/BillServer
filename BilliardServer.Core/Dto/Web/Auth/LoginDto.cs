@@ -1,4 +1,4 @@
-﻿namespace Billiard.Application.Dto
+﻿namespace BilliardServer.Core.Common.Dto.Auth
 {
     public class LoginDto
     {

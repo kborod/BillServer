@@ -1,5 +1,5 @@
-﻿using BilliardServer.API.DTOs;
-using BilliardServer.Core.Abstractions;
+﻿using BilliardServer.Core.Abstractions;
+using BilliardServer.Core.Common.Dto.Web;
 using BilliardServer.Core.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;

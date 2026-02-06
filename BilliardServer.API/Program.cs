@@ -1,5 +1,6 @@
 ﻿using Billiard.Application;
 using BilliardServer.API.Hubs;
+using BilliardServer.API.Hubs.ReliableMessageDelivery;
 using BilliardServer.Application.Features.Users;
 using BilliardServer.Core.Abstractions;
 using BilliardServer.Infrastructure;
@@ -17,6 +18,8 @@ public partial class Program
     private static void Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
+
+        builder.Services.AddMemoryCache();
 
         builder.Services.AddControllers();
 
@@ -148,11 +151,13 @@ public partial class Program
 
         #endregion
 
-
-        builder.Services.AddScoped<TokenService>();
+        builder.Services.AddSingleton<ReliableMessageDeliveryService>();
+        builder.Services.AddSingleton<OnlineUsersService>();
         builder.Services.AddScoped<IUsersRepository, UsersRepository>();
         builder.Services.AddScoped<IUsersService, UsersService>();
         builder.Services.AddScoped<IAuthService, AuthService>();
+        builder.Services.AddTransient<TokenService>();
+
 
         builder.Services.AddSignalR();
 
