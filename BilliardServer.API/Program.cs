@@ -1,4 +1,5 @@
 ﻿using Billiard.Application;
+using Billiard.Application.OnlineUsers;
 using BilliardServer.API.Hubs;
 using BilliardServer.API.Hubs.ReliableMessageDelivery;
 using BilliardServer.Application.Features.Users;
@@ -8,6 +9,7 @@ using BilliardServer.Infrastructure.Entities;
 using BilliardServer.Infrastructure.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -70,8 +72,8 @@ public partial class Program
             .AddDbContext<BilliardDbContext>(options =>
                 options
                     .UseNpgsql(builder.Configuration.GetConnectionString(nameof(BilliardDbContext)))
-                    .LogTo(Console.WriteLine, LogLevel.Information)
-                    .EnableDetailedErrors()
+                    //.LogTo(Console.WriteLine, LogLevel.Information)
+                    //.EnableDetailedErrors()
                 );
 
         builder.Services
@@ -152,11 +154,17 @@ public partial class Program
         #endregion
 
         builder.Services.AddSingleton<ReliableMessageDeliveryService>();
+        builder.Services.AddSingleton<AsyncMessagingService>();
+        builder.Services.AddSingleton<IAsyncMessagingService>(sp => sp.GetRequiredService<AsyncMessagingService>());
+        builder.Services.AddSingleton<IHubRequestsHandler>(sp => sp.GetRequiredService<AsyncMessagingService>());
         builder.Services.AddSingleton<OnlineUsersService>();
+        builder.Services.AddSingleton<IOnlineUsersService>(sp => sp.GetRequiredService<OnlineUsersService>());
         builder.Services.AddScoped<IUsersRepository, UsersRepository>();
         builder.Services.AddScoped<IUsersService, UsersService>();
         builder.Services.AddScoped<IAuthService, AuthService>();
         builder.Services.AddTransient<TokenService>();
+
+        //builder.Services.AddHostedService<TestService>();
 
 
         builder.Services.AddSignalR();

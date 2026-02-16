@@ -6,7 +6,7 @@ namespace BilliardServer.Core.Dto.Hub.Requests
     {
         #region IResponseMeta
         [JsonIgnore]
-        public bool IsRequired => true;
+        public bool IsRequired => false;
         [JsonIgnore]
         public RequestType RequestType => RequestType.LastRequestsList;
         #endregion

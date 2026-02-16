@@ -5,6 +5,8 @@
         MessageReceivedResponse,
         ResendLastRequestsResponse,
         LastResponsesListResponse,
-        JoinMatchResponse
+        AreYouAliveResponse,
+        ErrorResponse,
+        TestResponse,
     }
 }

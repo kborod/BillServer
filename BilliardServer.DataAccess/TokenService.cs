@@ -1,9 +1,11 @@
-﻿using BilliardServer.Infrastructure.Entities;
+﻿using BilliardServer.Core.Models;
+using BilliardServer.Infrastructure.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace BilliardServer.Infrastructure
@@ -19,7 +21,7 @@ namespace BilliardServer.Infrastructure
             _userManager = userManager;
         }
 
-        public async Task<string> GenerateAccessToken(UserEntity user)
+        public async Task<TokenData> GenerateAccessToken(UserEntity user)
         {
             var claims = new List<Claim>
             {
@@ -32,14 +34,32 @@ namespace BilliardServer.Infrastructure
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]!));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
+            var tokenExpires = DateTime.UtcNow.AddMinutes(double.Parse(_config["Jwt:AccessTokenLifetimeMinutes"]!));
             var token = new JwtSecurityToken(
                 issuer: _config["Jwt:Issuer"],
                 audience: _config["Jwt:Audience"],
                 claims: claims,
-                expires: DateTime.UtcNow.AddMinutes(double.Parse(_config["Jwt:AccessTokenLifetimeMinutes"]!)),
+                expires: tokenExpires,
                 signingCredentials: creds);
 
-            return new JwtSecurityTokenHandler().WriteToken(token);
+            var refreshToken = GenerateRefreshToken();
+            var refreshTokenExpires = DateTime.UtcNow.AddDays(double.Parse(_config["Jwt:RefreshTokenLifetimeDays"]!));
+
+            var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
+            return new() {  
+                Token = tokenString, 
+                TokenExpiredTimestamp = ((DateTimeOffset)tokenExpires.ToUniversalTime()).ToUnixTimeSeconds(), 
+                RefreshToken = refreshToken, 
+                RefreshTokenExpiredTimestamp = ((DateTimeOffset)refreshTokenExpires.ToUniversalTime()).ToUnixTimeSeconds()
+            };
+        }
+
+        private string GenerateRefreshToken()
+        {
+            var randomNumber = new byte[32];
+            using var rng = RandomNumberGenerator.Create();
+            rng.GetBytes(randomNumber);
+            return Convert.ToBase64String(randomNumber);
         }
     }
 }

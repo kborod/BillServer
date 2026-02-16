@@ -1,26 +1,25 @@
-﻿using Billiard.Application;
+﻿using BilliardServer.Core.Common;
 using BilliardServer.Core.Dto.Hub;
 using BilliardServer.Core.Dto.Hub.Requests;
 using BilliardServer.Core.Dto.Hub.Responses;
-using BilliardServer.Core.Models;
 using System.Collections.Concurrent;
-using System.Text.Json;
 
 namespace BilliardServer.API.Hubs.ReliableMessageDelivery
 {
     /// <summary>
     /// SignalR не гарантирует доставку сообщений, а также их порядок. Этот сервис контролирует эти моменты.
-    /// Выглядит как прослойка - все входящие и исходящие SignalR сообщения проходят через него.
+    /// По сути дополнительный слой - все входящие и исходящие SignalR сообщения проходят через него.
     /// По каждому онлайн юзеру хранит информацию о номере последнего обработанного реквеста с клиента, список последних 
     /// отправленных ответов с сервера, которые не получены клиентом.
     /// </summary>
     public class ReliableMessageDeliveryService
     {
-        private ConcurrentDictionary<long, UserMessagesInfo> _userInfos = new();
+        private ConcurrentDictionary<string, UserMessagesInfo> _userInfos = new();
+        private ILogger<ReliableMessageDeliveryService> _logger;
 
-        public ReliableMessageDeliveryService(OnlineUsersService onlineUsersService)
+        public ReliableMessageDeliveryService(ILogger<ReliableMessageDeliveryService> logger)
         {
-            onlineUsersService.UserDisconnected += UserDisconnectedHandler;
+            _logger = logger;
         }
 
         /// <summary>
@@ -31,48 +30,52 @@ namespace BilliardServer.API.Hubs.ReliableMessageDelivery
         /// Если номер запроса не соответствует ожидаемому - возвращает null, запрос игнорируется.
         /// Если получен список потерянных запросов, то возвращается список необработанных запросов.
         /// </summary>
-        public async Task<List<RequestEnvelope>?> GetUnprocessedRequests(RequestEnvelope request, long userId, IResponseSender responseSender)
+        public async Task<List<RequestEnvelope>?> GetRequestsForProcess(RequestEnvelope request, string userId, IResponseSender responseSender)
         {
-            if (request.IsRequired == false)
-            {
-                return new() { request };
-            }
-            
             var info = GetInfo(userId);
 
-            if (request.RequestType == RequestType.ResendLastResponses)
-            {
-                await ResendLastResponses(request, info, responseSender);
-                return null;
-            }
-            else if (request.RequestType == RequestType.ResponseReceived)
-            {
-                UserReceivedResponseHandler(request, info);
-                return null;
-            }
+            List<RequestEnvelope>? requests = new() { request }; ;
 
-            List<RequestEnvelope>? requests;
-
-            if (request.RequestType == RequestType.LastRequestsList)
-                requests = request.GetPayload<LastMessagesRequestDto>()?.LastRequests;
-            else
-                requests = new() { request };
+            if (request.IsRequired == false)
+            {
+                if (request.RequestType == RequestType.ResendLastResponses)
+                {
+                    await ResendLastResponses(request, info, responseSender);
+                    return null;
+                }
+                else if (request.RequestType == RequestType.ResponseReceived)
+                {
+                    UserReceivedResponseHandler(request, info);
+                    return null;
+                }
+                else if (request.RequestType == RequestType.LastRequestsList)
+                {
+                    requests = request.GetPayload<LastMessagesRequestDto>()?.LastRequests;
+                }
+                else
+                {
+                    return requests;
+                }
+            }
 
             if (IsOrderCorrect(requests, info) == false)
             {
-                await responseSender.Send(ResponseEnvelope.Create(new ResendLastMessagesResponseDto(info.LastReceivedRequestNumber + 1)));
+                await responseSender.ProcessResponse(ResponseEnvelope.Create(new ResendLastMessagesResponseDto(info.LastReceivedRequestNumber + 1)));
                 return null;
             }
 
-            requests = GetUnprocessedRequests(requests, info, responseSender);
+            requests = GetUnprocessedRequests(requests, info);
 
-            await responseSender.Send(ResponseEnvelope.Create(new MessageReceivedResponseDto(info.LastReceivedRequestNumber)));
+            await responseSender.ProcessResponse(ResponseEnvelope.Create(new MessageReceivedResponseDto(info.LastReceivedRequestNumber)));
 
             return requests;
         }
 
-        public ResponseEnvelope PrepeareForSendToUser(ResponseEnvelope response, long userId)
+        public ResponseEnvelope PrepeareForSendToUser(ResponseEnvelope response, string userId)
         {
+            if (!response.IsRequired)
+                return response;
+
             var info = GetInfo(userId);
 
             response.SequenceNumber = info.NextResponseNumber;
@@ -81,24 +84,36 @@ namespace BilliardServer.API.Hubs.ReliableMessageDelivery
             return response;
         }
 
+        public Task<Result> UserConnectedHandler(string userId)
+        {
+            if (_userInfos.TryGetValue(userId, out var info) == true)
+                _logger.LogError("UserConnectedHandler received but user in active session");
+
+            CreateUserInfo(userId);
+            return Task.FromResult(Result.Ok());
+        }
+
+        public Task UserDisconnectedHandler(string userId)
+        {
+            RemoveUserInfo(userId);
+            return Task.CompletedTask;
+        }
+
         private async Task ResendLastResponses(RequestEnvelope request, UserMessagesInfo info, IResponseSender sender)
         {
             var fromNumber = request.GetPayload<ResendLastMessagesRequestDto>()!.FromNumberInclusive;
             var responses = info.GetResponsesFromNumber(fromNumber);
-            await sender.Send(ResponseEnvelope.Create(new LastMessagesResponseDto(responses)));
+            await sender.ProcessResponse(ResponseEnvelope.Create(new LastMessagesResponseDto(responses)));
         }
 
         private void UserReceivedResponseHandler(RequestEnvelope request, UserMessagesInfo info)
         {
-            var payload = request.Payload.Deserialize<MessageReceivedRequestDto>();
+            var payload = request.GetPayload<MessageReceivedRequestDto>();
             if (payload == null)
                 return;
 
             info.RemoveResponsesBeforeNumber(payload.LastReceivedResponse);
         }
-
-
-
 
         private bool IsOrderCorrect(List<RequestEnvelope>? requests, UserMessagesInfo info)
         {
@@ -117,7 +132,7 @@ namespace BilliardServer.API.Hubs.ReliableMessageDelivery
             return info.LastReceivedRequestNumber + 1 >= minNumberInList;
         }
 
-        private List<RequestEnvelope>? GetUnprocessedRequests(List<RequestEnvelope>? requestsList, UserMessagesInfo info, IResponseSender responseSender)
+        private List<RequestEnvelope>? GetUnprocessedRequests(List<RequestEnvelope>? requestsList, UserMessagesInfo info)
         {
             if (requestsList == null || requestsList.Count == 0)
                 return null;
@@ -141,22 +156,33 @@ namespace BilliardServer.API.Hubs.ReliableMessageDelivery
                 .ToList();
         }
 
-        private UserMessagesInfo GetInfo(long userId)
+        private UserMessagesInfo GetInfo(string userId)
         {
             if (_userInfos.TryGetValue(userId, out var userMessagesInfo) == false)
             {
-                userMessagesInfo = new UserMessagesInfo();
-                _userInfos.TryAdd(userId, userMessagesInfo);
+                _logger.LogError("MessagesInfo is not exist");
+                userMessagesInfo = CreateUserInfo(userId);
             }
             return userMessagesInfo;
         }
 
-        private void UserDisconnectedHandler(long id)
+        private UserMessagesInfo CreateUserInfo(string userId)
         {
-            RemoveUserInfo(id);
+            var userMessagesInfo = new UserMessagesInfo();
+            var added = _userInfos.TryAdd(userId, userMessagesInfo);
+            if (added == false)
+            {
+                _logger.LogError("MessagesInfo already exist. Overrided");
+                _userInfos.AddOrUpdate(
+                    userId,
+                    _ => userMessagesInfo,
+                    (_, _) => userMessagesInfo
+                );
+            }
+            return userMessagesInfo;
         }
 
-        private void RemoveUserInfo(long userId)
+        private void RemoveUserInfo(string userId)
         {
             _userInfos.TryRemove(userId, out var _);
         }

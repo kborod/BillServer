@@ -1,5 +1,5 @@
-﻿using BilliardServer.Core.Dto.Hub;
-using System.Diagnostics;
+﻿using BilliardServer.Core.Common;
+using BilliardServer.Core.Dto.Hub;
 
 namespace BilliardServer.API.Hubs.ReliableMessageDelivery
 {
@@ -54,16 +54,11 @@ namespace BilliardServer.API.Hubs.ReliableMessageDelivery
             while(true)
             {
                 var current = _nextResponseNumber;
-                var old = Interlocked.CompareExchange(ref _nextResponseNumber, current + 1, current);
+                var result = current + 1;
+                var old = Interlocked.CompareExchange(ref _nextResponseNumber, result, current);
                 if (old == current)
-                    break;
+                    return result;
             }
-            return _nextResponseNumber;
-        }
-
-        private void LogError(string s)
-        {
-            Debug.WriteLine(s);
         }
     }
 }

@@ -5,7 +5,6 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using System.Diagnostics;
 using System.Security.Claims;
 
 namespace BilliardServer.API.Controllers
@@ -14,22 +13,24 @@ namespace BilliardServer.API.Controllers
     [Route("[controller]")]
     public class AuthController : ControllerBase
     {
-        private readonly ISender _sender;
+        private readonly IMediator _mediator;
 
         private readonly UserManager<UserEntity> _userManager;
         private readonly SignInManager<UserEntity> _signInManager;
+        private readonly ILogger<AuthController> _logger;
 
-        public AuthController(ISender sender, UserManager<UserEntity> userManager, SignInManager<UserEntity> signInManager)
+        public AuthController(IMediator mediator, UserManager<UserEntity> userManager, SignInManager<UserEntity> signInManager, ILogger<AuthController> logger)
         {
-            _sender = sender;
+            _mediator = mediator;
             _userManager = userManager;
             _signInManager = signInManager;
+            _logger = logger;
         }
 
-        [HttpPost("register")]
+        [HttpPost("Register")]
         public async Task<IActionResult> Register([FromBody] RegisterDto dto)
         {
-            var registerResult = await _sender.Send(new RegisterByEmailCommand(dto.Name, dto.Email, dto.Password));
+            var registerResult = await _mediator.Send(new RegisterByEmailCommand(dto.Name, dto.Email, dto.Password));
 
             if (!registerResult.IsSuccess)
                 return BadRequest(registerResult.Error);
@@ -37,10 +38,10 @@ namespace BilliardServer.API.Controllers
             return Ok("Registration complete");
         }
 
-        [HttpPost("login")]
+        [HttpPost("Login")]
         public async Task<IActionResult> Login([FromBody] LoginDto dto)
         {
-            var loginResult = await _sender.Send(new LoginByEmailCommand(dto.Email, dto.Password));
+            var loginResult = await _mediator.Send(new LoginByEmailCommand(dto.Email, dto.Password));
 
             if (!loginResult.IsSuccess)
             {
@@ -48,8 +49,24 @@ namespace BilliardServer.API.Controllers
                 if (loginResult.RequiresTwoFactor) return Ok(new { requires2fa = true });
                 return BadRequest(loginResult.Error);
             }
+            return Ok(new LoginResponseDto { TokenData = loginResult.TokenData });
+        }
 
-            return Ok(new { accessToken = loginResult.Token });
+        [HttpPost("Refresh")]
+        public async Task<IActionResult> Refresh([FromBody] RefreshTokenDto dto)
+        {
+            //var loginResult = await _sender.Send(new LoginByEmailCommand(dto.Email, dto.Password));
+
+            //if (!loginResult.IsSuccess)
+            //{
+            //    if (loginResult.IsLockedOut) return Unauthorized("Locked");
+            //    if (loginResult.RequiresTwoFactor) return Ok(new { requires2fa = true });
+            //    return BadRequest(loginResult.Error);
+            //}
+
+            //return (new LoginResponseDto { TokenData = loginResult.TokenData });
+
+            return BadRequest("Not implemented");
         }
 
         [AllowAnonymous]
@@ -72,7 +89,7 @@ namespace BilliardServer.API.Controllers
             var email = GetEmailFromExternalProvider(info);
             var name = GetNameFromExternalProvider(info);
 
-            var loginResult = await _sender.Send(new LoginByProviderCommand(info.LoginProvider, info.ProviderKey, name, email));
+            var loginResult = await _mediator.Send(new LoginByProviderCommand(info.LoginProvider, info.ProviderKey, name, email));
             
             if (!loginResult.IsSuccess)
                 return BadRequest(loginResult.Error);
@@ -84,7 +101,7 @@ namespace BilliardServer.API.Controllers
                 if (!result.Succeeded)
                 {
                     _ = _userManager.DeleteAsync(userEntity!);
-                    Debug.WriteLine($"Error associating external login: {string.Join(", ", result.Errors)}");
+                    _logger.LogError($"Error associating external login: {string.Join(", ", result.Errors)}");
                     return BadRequest("Error associating external login");
                 }
             }

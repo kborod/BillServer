@@ -6,13 +6,13 @@ namespace BilliardServer.Core.Common
     bool IsSuccess,
     bool RequiresTwoFactor = false,
     bool IsLockedOut = false,
-    string? Token = null,
+    TokenData? TokenData = null,
     string? Error = null)
     {
-        public static AuthResult Success(string token)
+        public static AuthResult Success(TokenData token)
             => new(true, false, false, token);
 
-        public static AuthResult Requires2FA(string token)
+        public static AuthResult Requires2FA(TokenData token)
             => new(true, true, false, token);
 
         public static AuthResult Failure(string error)

@@ -4,6 +4,6 @@ namespace BilliardServer.API.Hubs
 {
     public interface IResponseSender
     {
-        Task Send(ResponseEnvelope responseEnvelope);
+        Task ProcessResponse(ResponseEnvelope responseEnvelope);
     }
 }

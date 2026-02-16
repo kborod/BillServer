@@ -5,6 +5,8 @@
         ResponseReceived, 
         ResendLastResponses,
         LastRequestsList,
-        JoinMatch
+        IamAlive,
+        StartSession,
+        Test,
     }
 }

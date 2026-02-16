@@ -23,7 +23,7 @@ namespace BilliardServer.Core.Dto.Hub
             return new ResponseEnvelope
             {
                 IsRequired = payload.IsRequired,
-                SequenceNumber = 0,
+                SequenceNumber = -1,
                 ResponseType = payload.ResponseType,
                 Payload = payloadJson
             };

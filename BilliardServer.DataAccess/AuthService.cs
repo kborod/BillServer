@@ -73,9 +73,9 @@ namespace BilliardServer.Infrastructure
                 userEntity = createEntityResult.Value!;
             }
 
-            var token = await _tokenService.GenerateAccessToken(userEntity);
+            var tokenData = await _tokenService.GenerateAccessToken(userEntity);
 
-            return AuthByProviderResult.Ok(token, userEntity.CreateUser(), isFirstAuth);
+            return AuthByProviderResult.Ok(tokenData, userEntity.CreateUser(), isFirstAuth);
         }
 
         private async Task<Result<UserEntity>> CreateUserEntity(string name, string? email = null, string? password = null, int avatar = 1)
