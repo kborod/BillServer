@@ -1,8 +1,8 @@
 ﻿using BilliardServer.Core.Dto.Hub;
 
-namespace BilliardServer.API.Hubs
+namespace BilliardServer.API.AsyncMessaging
 {
-    public interface IHubRequestsHandler
+    public interface IMessagingRequestsHandlerService
     {
         public Task RequestReceivedFromHub(RequestEnvelope requestEnvelope, string userId, IResponseSender responseSender);
     }

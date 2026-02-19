@@ -2,13 +2,13 @@
 using BilliardServer.Core.Dto.Hub;
 using MediatR;
 
-namespace BilliardServer.API.Hubs
+namespace BilliardServer.API.AsyncMessaging
 {
     public static class RequestProcessor
     {
         public static async Task Process(this RequestEnvelope requestEnvelope, string userId, IMediator sender)
         {
-            await sender.Publish(new UserHearbeatEvent(userId));
+            
         }
         //=> requestEnvelope.RequestType switch
         //{

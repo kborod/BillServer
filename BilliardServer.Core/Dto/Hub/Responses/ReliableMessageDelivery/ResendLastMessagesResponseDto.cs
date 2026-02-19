@@ -2,7 +2,7 @@
 
 namespace BilliardServer.Core.Dto.Hub.Responses
 {
-    public class ResendLastMessagesResponseDto : IResponseMeta
+    public class ResendLastMessagesResponseDto : IResponse
     {
         #region IResponseMeta
         [JsonIgnore]

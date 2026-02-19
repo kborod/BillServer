@@ -1,6 +1,6 @@
 ﻿namespace BilliardServer.Core.Dto.Hub
 {
-    public interface IRequestMeta
+    public interface IRequest
     {
         /// <summary>
         /// Обязательно должен быть доставлен

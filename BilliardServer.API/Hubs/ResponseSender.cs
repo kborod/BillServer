@@ -1,7 +1,7 @@
 ﻿using BilliardServer.Core.Dto.Hub;
 using System.Text.Json;
 
-namespace BilliardServer.API.Hubs
+namespace BilliardServer.API.AsyncMessaging
 {
     public class ResponseSender : IResponseSender
     {

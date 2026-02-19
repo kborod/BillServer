@@ -1,17 +1,21 @@
-﻿using BilliardServer.Core.Abstractions;
+﻿using BilliardServer.Application.Abstractions.AsyncMessaging;
+using BilliardServer.Application.Features.Users;
 using BilliardServer.Core.Dto.Hub;
 using BilliardServer.Core.Dto.Hub.Responses;
+using MediatR;
 
 namespace BuilliardServer.Test
 {
     public class TestService : BackgroundService
     {
-        private IAsyncMessagingService _asyncMessagesService;
-        private ILogger<TestService> _logger;
+        private IMediator _mediador;
+        private IMessagingResponseSenderService _responseSender;
+        private ILogger _logger;
 
-        public TestService(IAsyncMessagingService asyncMessagesService, ILogger<TestService> logger)
+        public TestService(IMediator mediator, IMessagingResponseSenderService responseSender, ILogger logger)
         {
-            _asyncMessagesService = asyncMessagesService;
+            _mediador = mediator;
+            _responseSender = responseSender;
             _logger = logger;
         }
 
@@ -19,18 +23,11 @@ namespace BuilliardServer.Test
         {
             while (true)
             {
-                try
-                {
-                    //Если юзер офлайн, то сообщение просто теряется
-                    await _asyncMessagesService.SendResponseToUser("1", ResponseEnvelope.Create(new TestResponseDto("Тестовый запрос")), _logger);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Ошибка при отправке периодического сообщения");
-                }
+                var isOnline = await _mediador.Send(new IsUserOnlineCommand("1"));
+                if (isOnline)
+                    await _responseSender.SendResponseToUser("1", ResponseEnvelope.Create(new TestResponseDto("!!!TESTRESPONSE")), _logger);
 
-                // Периодичность — каждые 10 секунд
-                await Task.Delay(TimeSpan.FromSeconds(10));
+                await Task.Delay(TimeSpan.FromSeconds(7));
             }
         }
     }

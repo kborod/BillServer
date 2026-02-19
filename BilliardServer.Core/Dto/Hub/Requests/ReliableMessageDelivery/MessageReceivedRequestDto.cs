@@ -2,9 +2,9 @@
 
 namespace BilliardServer.Core.Dto.Hub.Requests
 {
-    public class MessageReceivedRequestDto : IRequestMeta
+    public class MessageReceivedRequestDto : IRequest
     {
-        #region IResponseMeta
+        #region IRequestMeta
         [JsonIgnore]
         public bool IsRequired => false;
         [JsonIgnore]

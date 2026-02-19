@@ -1,6 +1,6 @@
 ﻿using BilliardServer.Core.Dto.Hub;
 
-namespace BilliardServer.API.Hubs
+namespace BilliardServer.API.AsyncMessaging
 {
     public interface IResponseSender
     {

@@ -1,4 +1,4 @@
-﻿using BilliardServer.Core.Abstractions;
+﻿using BilliardServer.Application.Abstractions;
 using MediatR;
 
 namespace BilliardServer.Application.Features.Users

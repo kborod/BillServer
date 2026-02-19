@@ -3,5 +3,5 @@ using MediatR;
 
 namespace BilliardServer.Application.Features.Users
 {
-    public record UserCreateSessionCommand(string UserId) : IRequest<Result>;
+    public record UserStopSessionCommand(string UserId) : IRequest<Result>;
 }

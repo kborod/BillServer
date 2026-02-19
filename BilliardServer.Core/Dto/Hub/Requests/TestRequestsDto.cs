@@ -1,19 +1,19 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace BilliardServer.Core.Dto.Hub.Responses
+namespace BilliardServer.Core.Dto.Hub.Requests
 {
-    public class TestResponseDto : IResponse
+    public class TestRequestsDto : IRequest
     {
-        #region IResponseMeta
+        #region IRequestMeta
         [JsonIgnore]
         public bool IsRequired => true;
         [JsonIgnore]
-        public ResponseType ResponseType => ResponseType.TestResponse;
+        public RequestType RequestType => RequestType.Test;
         #endregion
 
         public string Data { get; set; }
 
-        public TestResponseDto(string data)
+        public TestRequestsDto(string data)
         {
             Data = data;
         }

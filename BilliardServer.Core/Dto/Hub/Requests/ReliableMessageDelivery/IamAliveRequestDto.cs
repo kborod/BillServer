@@ -2,13 +2,13 @@
 
 namespace BilliardServer.Core.Dto.Hub.Requests
 {
-    public class StartSession : IRequestMeta
+    public class IamAliveRequestDto : IRequest
     {
-        #region IResponseMeta
+        #region IRequestMeta
         [JsonIgnore]
         public bool IsRequired => false;
         [JsonIgnore]
-        public RequestType RequestType => RequestType.StartSession;
+        public RequestType RequestType => RequestType.IamAlive;
         #endregion
     }
 }

@@ -17,7 +17,7 @@ namespace BilliardServer.Core.Dto.Hub
 
         public required JsonElement Payload { get; set; }
 
-        public static ResponseEnvelope Create<T>(T payload) where T : IResponseMeta
+        public static ResponseEnvelope Create<T>(T payload) where T : IResponse
         {
             var payloadJson = JsonSerializer.SerializeToElement(payload);
             return new ResponseEnvelope

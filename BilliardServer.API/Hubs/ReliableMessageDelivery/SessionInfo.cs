@@ -1,19 +1,36 @@
-﻿using BilliardServer.Core.Common;
-using BilliardServer.Core.Dto.Hub;
+﻿using BilliardServer.Core.Dto.Hub;
 
-namespace BilliardServer.API.Hubs.ReliableMessageDelivery
+namespace BilliardServer.API.AsyncMessaging.ReliableMessageDelivery
 {
-    public class UserMessagesInfo
+    public class SessionInfo
     {
+        public string UserId { get; private set; }
+
         public int LastReceivedRequestNumber => _lastReceivedSequenceNumber;
-        public int NextResponseNumber => GetNextResponseNumber();
 
         private readonly object _lock = new();
 
         private List<ResponseEnvelope> _responsesCache = new();
 
         private int _lastReceivedSequenceNumber = 0;
-        private int _nextResponseNumber = 0;
+        private int _lastResponseNumber = 0;
+
+        public SessionInfo(string userId)
+        {
+            UserId = userId;
+        }
+
+        public int GetNextResponseNumber()
+        {
+            while (true)
+            {
+                var current = _lastResponseNumber;
+                var result = current + 1;
+                var old = Interlocked.CompareExchange(ref _lastResponseNumber, result, current);
+                if (old == current)
+                    return result;
+            }
+        }
 
         public bool SetLastReceivedSequenceNumber(int currentValue, int newValue)
         {
@@ -49,16 +66,9 @@ namespace BilliardServer.API.Hubs.ReliableMessageDelivery
             }
         }
 
-        private int GetNextResponseNumber()
+        public override string ToString()
         {
-            while(true)
-            {
-                var current = _nextResponseNumber;
-                var result = current + 1;
-                var old = Interlocked.CompareExchange(ref _nextResponseNumber, result, current);
-                if (old == current)
-                    return result;
-            }
+            return $"LastRequest:{LastReceivedRequestNumber}; LastResponse:{_lastResponseNumber}; ResponsesCache: {_responsesCache.Count}";
         }
     }
 }

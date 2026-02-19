@@ -17,9 +17,9 @@ namespace BilliardServer.API.Controllers
 
         private readonly UserManager<UserEntity> _userManager;
         private readonly SignInManager<UserEntity> _signInManager;
-        private readonly ILogger<AuthController> _logger;
+        private readonly ILogger _logger;
 
-        public AuthController(IMediator mediator, UserManager<UserEntity> userManager, SignInManager<UserEntity> signInManager, ILogger<AuthController> logger)
+        public AuthController(IMediator mediator, UserManager<UserEntity> userManager, SignInManager<UserEntity> signInManager, ILogger logger)
         {
             _mediator = mediator;
             _userManager = userManager;

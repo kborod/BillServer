@@ -1,15 +1,18 @@
 ﻿using Billiard.Application;
 using Billiard.Application.OnlineUsers;
-using BilliardServer.API.Hubs;
-using BilliardServer.API.Hubs.ReliableMessageDelivery;
+using BilliardServer.API.AsyncMessaging;
+using BilliardServer.API.AsyncMessaging.Hubs;
+using BilliardServer.API.AsyncMessaging.ReliableMessageDelivery;
+using BilliardServer.Application.Abstractions;
+using BilliardServer.Application.Abstractions.AsyncMessaging;
 using BilliardServer.Application.Features.Users;
 using BilliardServer.Core.Abstractions;
 using BilliardServer.Infrastructure;
 using BilliardServer.Infrastructure.Entities;
 using BilliardServer.Infrastructure.Repositories;
+using BuilliardServer.Test;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -153,18 +156,23 @@ public partial class Program
 
         #endregion
 
-        builder.Services.AddSingleton<ReliableMessageDeliveryService>();
-        builder.Services.AddSingleton<AsyncMessagingService>();
-        builder.Services.AddSingleton<IAsyncMessagingService>(sp => sp.GetRequiredService<AsyncMessagingService>());
-        builder.Services.AddSingleton<IHubRequestsHandler>(sp => sp.GetRequiredService<AsyncMessagingService>());
-        builder.Services.AddSingleton<OnlineUsersService>();
-        builder.Services.AddSingleton<IOnlineUsersService>(sp => sp.GetRequiredService<OnlineUsersService>());
+        builder.Services.AddSingleton<ILogger>(sp => sp.GetRequiredService<ILoggerFactory>().CreateLogger(string.Empty));
+
+        builder.Services.AddSingleton<ReliableMessageDeliveryService>()
+            .AddSingleton<IMessagingRequestsHandlerService>(sp => sp.GetRequiredService<ReliableMessageDeliveryService>())
+            .AddSingleton<IMessagingResponseSenderService>(sp => sp.GetRequiredService<ReliableMessageDeliveryService>())
+            .AddSingleton<IUserDisconnectedHandler>(sp => sp.GetRequiredService<ReliableMessageDeliveryService>());
+
+
+        builder.Services.AddSingleton<IOnlineUsersService, OnlineUsersService>()
+            .AddHostedService(sp => (OnlineUsersService)sp.GetRequiredService<IOnlineUsersService>());
+
         builder.Services.AddScoped<IUsersRepository, UsersRepository>();
         builder.Services.AddScoped<IUsersService, UsersService>();
         builder.Services.AddScoped<IAuthService, AuthService>();
         builder.Services.AddTransient<TokenService>();
 
-        //builder.Services.AddHostedService<TestService>();
+        builder.Services.AddHostedService<TestService>();
 
 
         builder.Services.AddSignalR();

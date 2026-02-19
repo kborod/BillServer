@@ -2,18 +2,18 @@
 
 namespace BilliardServer.Core.Dto.Hub.Responses
 {
-    public class ErrorResponseDto : IResponse
+    public class SessionErrorResponseDto : IResponse
     {
         #region IResponseMeta
         [JsonIgnore]
         public bool IsRequired => false;
         [JsonIgnore]
-        public ResponseType ResponseType => ResponseType.ErrorResponse;
+        public ResponseType ResponseType => ResponseType.SessionErrorResponse;
         #endregion
 
         public string Error { get; set; }
 
-        public ErrorResponseDto(string error)
+        public SessionErrorResponseDto(string error)
         {
             Error = error;
         }

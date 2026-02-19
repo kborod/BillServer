@@ -1,7 +1,6 @@
-﻿using BilliardServer.Application.Features.Users;
-using BilliardServer.Core.Abstractions;
+﻿using BilliardServer.Application.Abstractions;
+using BilliardServer.Application.Features.Users;
 using BilliardServer.Core.Common;
-using BilliardServer.Core.Models;
 using MediatR;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -15,33 +14,57 @@ namespace Billiard.Application.OnlineUsers
     /// </summary>
     public class OnlineUsersService : BackgroundService, IOnlineUsersService
     {
-        private readonly TimeSpan InactivityTimeout = TimeSpan.FromSeconds(10);
+        private readonly TimeSpan InactivityDisconnectAfter = TimeSpan.FromSeconds(150);
+        private readonly TimeSpan StartListenHeartbeatAfter = TimeSpan.FromSeconds(145);
         private readonly TimeSpan CheckPeriod = TimeSpan.FromSeconds(3);
+        private readonly ConcurrentDictionary<string, UserInfo> _onlineUsers = new ConcurrentDictionary<string, UserInfo>();
 
-        private ILogger<OnlineUsersService> _logger;
-        private IMediator _mediator;
+        private readonly ILogger _logger;
+        private readonly IMediator _mediator;
 
-        private ConcurrentDictionary<string, UserInfo> _onlineUsers = new ConcurrentDictionary<string, UserInfo>();
         
-        public OnlineUsersService(ILogger<OnlineUsersService> logger, IMediator mediator)
+        public OnlineUsersService(ILogger logger, IMediator mediator)
         {
             _logger = logger;
             _mediator = mediator;
         }
 
-        public Task<Result> UserConnected(string userId)
+        public async Task<Result> ConnectUser(string userId)
         {
-            var added = _onlineUsers.TryAdd(userId, new UserInfo(DateTime.UtcNow));
-            var result = added == true ? Result.Ok() : Result.Fail("Session already started");
-            return Task.FromResult(result);
+            if (_onlineUsers.ContainsKey(userId))
+                await ProcessDisconnectUser(userId, true);
+
+            var added = _onlineUsers.TryAdd(userId, new UserInfo(DateTime.UtcNow, false));
+            
+            if (added)
+            {
+                _logger.LogInformation($"[OnlineUsersService] User connected. id: {userId}");
+                return Result.Ok();
+            }
+                
+            else
+            {
+                _logger.LogError($"[OnlineUsersService] User already online. id: {userId}");
+                return Result.Fail($"User already online");
+            }
+        }
+
+        public async Task<Result> DisconnectUser(string userId)
+        {
+            if (!_onlineUsers.ContainsKey(userId))
+                return Result.Fail("User already disconnected");
+
+            await ProcessDisconnectUser(userId, false);
+
+            return Result.Ok();
         }
 
         public Task HeartbeatHandler(string userId)
         {
             _onlineUsers.AddOrUpdate(
                 userId,
-                _ => new UserInfo(DateTime.UtcNow),
-                (key, old) => old with { LastSeen = DateTime.UtcNow }
+                _ => new UserInfo(LastSeen: DateTime.UtcNow, WaitingHeartbeat: false),
+                (key, old) => old.WithNewLastMessageReceived(DateTime.UtcNow)
             );
 
             return Task.CompletedTask;
@@ -61,27 +84,50 @@ namespace Billiard.Application.OnlineUsers
 
                 foreach (var kv in _onlineUsers)
                 {
-                    if (now - kv.Value.LastSeen > InactivityTimeout)
+                    var userId = kv.Key;
+                    var userInfo = kv.Value;
+
+                    if (now - userInfo.LastSeen > InactivityDisconnectAfter)
                     {
-                        toRemove.Add(kv.Key);
+                        toRemove.Add(userId);
+                    }
+                    else if (now - userInfo.LastSeen > StartListenHeartbeatAfter)
+                    {
+                        if (userInfo.WaitingHeartbeat == false)
+                        {
+                            _onlineUsers.AddOrUpdate(
+                                userId,
+                                _ => new UserInfo(LastSeen: DateTime.UtcNow, WaitingHeartbeat: true),
+                                (key, old) => old.WithWaitingHeartbeat()
+                            );
+                            _ = _mediator.Send(new ListenHeartbeatCommand(userId));
+                        }
                     }
                 }
 
                 foreach (string userId in toRemove)
                 {
-                    _onlineUsers.TryRemove(userId, out _);
-                    await _mediator.Send(new UserDisconnectedEvent(userId));
-                    _logger.LogInformation($"User disconnected. id: {userId}");
+                    await ProcessDisconnectUser(userId, false);
                 }
 
                 await Task.Delay(CheckPeriod, stoppingToken);
             }
         }
 
-        private record UserInfo(DateTime LastSeen)
+        private async Task ProcessDisconnectUser(string userId, bool beforeStartNewSession)
+        {
+            _onlineUsers.TryRemove(userId, out _);
+            await _mediator.Publish(new UserDisconnectedEvent(userId, beforeStartNewSession));
+            _logger.LogInformation($"User disconnected. id: {userId}");
+        }
+
+        private record UserInfo(DateTime LastSeen, bool WaitingHeartbeat)
         {
             public UserInfo WithNewLastMessageReceived(DateTime lastSeen) =>
-                this with { LastSeen = lastSeen };
+                this with { LastSeen = lastSeen, WaitingHeartbeat = false };
+
+            public UserInfo WithWaitingHeartbeat() =>
+                this with { WaitingHeartbeat = true };
         };
     }
 

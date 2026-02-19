@@ -1,20 +1,20 @@
-﻿using BilliardServer.Core.Abstractions;
+﻿using BilliardServer.Application.Abstractions;
 using MediatR;
 
 namespace BilliardServer.Application.Features.Users
 {
     public class UserDisonnectedEventHandler : INotificationHandler<UserDisconnectedEvent>
     {
-        private IAsyncMessagingService _messagingService;
+        private IUserDisconnectedHandler _handler;
 
-        public UserDisonnectedEventHandler(IAsyncMessagingService messagingService)
+        public UserDisonnectedEventHandler(IUserDisconnectedHandler handler)
         {
-            _messagingService = messagingService;
+            _handler = handler;
         }
 
         public async Task Handle(UserDisconnectedEvent notification, CancellationToken cancellationToken)
         {
-            await _messagingService.UserDisconnectedHandler(notification.UserId);
+            await _handler.UserDisconnectedHandler(notification.UserId, notification.BeforeStartNewSession);
         }
     }
 }

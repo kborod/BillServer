@@ -6,6 +6,7 @@
         ResendLastRequestsResponse,
         LastResponsesListResponse,
         AreYouAliveResponse,
+        SessionErrorResponse,
         ErrorResponse,
         TestResponse,
     }

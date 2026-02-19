@@ -1,6 +1,6 @@
 ﻿namespace BilliardServer.Core.Dto.Hub
 {
-    public interface IResponseMeta
+    public interface IResponse
     {
         /// <summary>
         /// Обязательно должен быть доставлен

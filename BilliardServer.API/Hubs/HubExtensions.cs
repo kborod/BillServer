@@ -1,7 +1,7 @@
 ﻿using BilliardServer.Core.Dto.Hub;
 using System.Text.Json;
 
-namespace BilliardServer.API.Hubs
+namespace BilliardServer.API.AsyncMessaging
 {
     public static class HubExtensions
     {
@@ -12,7 +12,7 @@ namespace BilliardServer.API.Hubs
 
         public static IResponseSender AddLogging(this IResponseSender sender, ILogger logger, string userId)
         {
-            return new ResponseSender(sender, logger, $"UserId_{userId}");
+            return new ResponseSender(sender, logger, $"UserId:{userId}");
         }
     }
 }
