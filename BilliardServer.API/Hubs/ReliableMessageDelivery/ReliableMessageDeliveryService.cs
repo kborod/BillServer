@@ -3,8 +3,8 @@ using BilliardServer.Application.Abstractions;
 using BilliardServer.Application.Abstractions.AsyncMessaging;
 using BilliardServer.Application.Features.Users;
 using BilliardServer.Core.Common;
-using BilliardServer.Core.Dto.Hub;
-using BilliardServer.Core.Dto.Hub.Responses;
+using BilliardServer.Core.Dto.Messaging;
+using BilliardServer.Core.Dto.Messaging.Responses;
 using MediatR;
 using Microsoft.AspNetCore.SignalR;
 using System.Collections.Concurrent;
@@ -99,8 +99,9 @@ namespace BilliardServer.API.AsyncMessaging.ReliableMessageDelivery
             _logger.LogInformation($"Session: {session}");
         }
 
-        public async Task SendResponseToUser(string userId, ResponseEnvelope responseEnvelope, ILogger? logger = null)
+        public async Task SendResponseToUser<T>(string userId, T response, ILogger? logger = null) where T : IResponse
         {
+            var responseEnvelope = ResponseEnvelope.Create(response);
             if (responseEnvelope.IsRequired)
             {
                 var session = GetSession(userId);
@@ -119,7 +120,7 @@ namespace BilliardServer.API.AsyncMessaging.ReliableMessageDelivery
         public Task UserDisconnectedHandler(string userId, bool beforeStartNewSession)
         {
             if (!beforeStartNewSession)
-                _ = SendResponseToUser(userId, ResponseEnvelope.Create(new SessionErrorResponseDto("Session closed")));
+                _ = SendResponseToUser(userId, new SessionErrorResponseDto("Session closed"));
             RemoveUserInfo(userId);
             return Task.CompletedTask;
         }

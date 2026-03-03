@@ -1,7 +1,6 @@
 ﻿using BilliardServer.Application.Abstractions.AsyncMessaging;
 using BilliardServer.Application.Features.Users;
-using BilliardServer.Core.Dto.Hub;
-using BilliardServer.Core.Dto.Hub.Responses;
+using BilliardServer.Core.Dto.Messaging.Responses;
 using MediatR;
 
 namespace BuilliardServer.Test
@@ -25,7 +24,7 @@ namespace BuilliardServer.Test
             {
                 var isOnline = await _mediador.Send(new IsUserOnlineCommand("1"));
                 if (isOnline)
-                    await _responseSender.SendResponseToUser("1", ResponseEnvelope.Create(new TestResponseDto("!!!TESTRESPONSE")), _logger);
+                    await _responseSender.SendResponseToUser("1", new TestResponseDto("!!!TESTRESPONSE"), _logger);
 
                 await Task.Delay(TimeSpan.FromSeconds(7));
             }

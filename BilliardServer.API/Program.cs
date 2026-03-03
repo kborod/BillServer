@@ -1,11 +1,13 @@
 ﻿using Billiard.Application;
-using Billiard.Application.OnlineUsers;
 using BilliardServer.API.AsyncMessaging;
 using BilliardServer.API.AsyncMessaging.Hubs;
 using BilliardServer.API.AsyncMessaging.ReliableMessageDelivery;
 using BilliardServer.Application.Abstractions;
 using BilliardServer.Application.Abstractions.AsyncMessaging;
 using BilliardServer.Application.Features.Users;
+using BilliardServer.Application.Matches;
+using BilliardServer.Application.MatchMaking;
+using BilliardServer.Application.OnlineUsers;
 using BilliardServer.Core.Abstractions;
 using BilliardServer.Infrastructure;
 using BilliardServer.Infrastructure.Entities;
@@ -156,6 +158,11 @@ public partial class Program
 
         #endregion
 
+        builder.Services.AddOptions<OnlineUsersServiceConfig>()
+            .Bind(builder.Configuration.GetSection(OnlineUsersServiceConfig.SectionName))
+            .ValidateDataAnnotations();
+
+
         builder.Services.AddSingleton<ILogger>(sp => sp.GetRequiredService<ILoggerFactory>().CreateLogger(string.Empty));
 
         builder.Services.AddSingleton<ReliableMessageDeliveryService>()
@@ -163,16 +170,21 @@ public partial class Program
             .AddSingleton<IMessagingResponseSenderService>(sp => sp.GetRequiredService<ReliableMessageDeliveryService>())
             .AddSingleton<IUserDisconnectedHandler>(sp => sp.GetRequiredService<ReliableMessageDeliveryService>());
 
-
         builder.Services.AddSingleton<IOnlineUsersService, OnlineUsersService>()
             .AddHostedService(sp => (OnlineUsersService)sp.GetRequiredService<IOnlineUsersService>());
+
+        builder.Services.AddSingleton<MatchesService>()
+            .AddHostedService(sp => sp.GetRequiredService<MatchesService>());
+
+        builder.Services.AddSingleton<MatchMakingService>()
+            .AddHostedService(sp => sp.GetRequiredService<MatchMakingService>());
 
         builder.Services.AddScoped<IUsersRepository, UsersRepository>();
         builder.Services.AddScoped<IUsersService, UsersService>();
         builder.Services.AddScoped<IAuthService, AuthService>();
         builder.Services.AddTransient<TokenService>();
 
-        builder.Services.AddHostedService<TestService>();
+        //builder.Services.AddHostedService<TestService>();
 
 
         builder.Services.AddSignalR();

@@ -99,7 +99,7 @@ namespace BilliardServer.Infrastructure
             if (!result.Succeeded)
                 return Result<UserEntity>.Fail(string.Join(",", result.Errors));
 
-            await _userManager.AddToRoleAsync(userEntity, RoleType.User);
+            await _userManager.AddToRoleAsync(userEntity, UserRoleType.User);
 
             return Result<UserEntity>.Ok(userEntity);
         }

@@ -5,10 +5,9 @@ namespace BilliardServer.Core.Abstractions
 {
     public interface IUsersService
     {
+        Task<Result<User?>> GetUser(string id);
         Task<Result<User?>> GetByEmail(string email);
-        //Task<User> Create(string name, int avatar);
-        Task<int> Delete(int id);
-        Task<List<User>> GetAll();
-        Task<int> Update(int id, string name, int avatar);
+        Task Delete(string id);
+        Task Update(string id, string name, int avatar);
     }
 }

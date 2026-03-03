@@ -13,29 +13,24 @@ namespace Billiard.Application
             _usersRepository = usersRepository;
         }
 
+        public async Task<Result<User?>> GetUser(string id)
+        {
+            return await _usersRepository.GetUser(id);
+        }
+
         public async Task<Result<User?>> GetByEmail(string email)
         {
             return await _usersRepository.GetByEmail(email);
         }
 
-        public async Task<List<User>> GetAll()
+        public async Task Update(string id, string name, int avatar)
         {
-            return await _usersRepository.GetAll();
+            await _usersRepository.Update(id, name, avatar);
         }
 
-        //public async Task<User> Create(string name, int avatar)
-        //{
-        //    return await _usersRepository.Create(name, avatar);
-        //}
-
-        public async Task<int> Update(int id, string name, int avatar)
+        public async Task Delete(string id)
         {
-            return await _usersRepository.Update(id, name, avatar);
-        }
-
-        public async Task<int> Delete(int id)
-        {
-            return await _usersRepository.Delete(id);
+            await _usersRepository.Delete(id);
         }
     }
 }

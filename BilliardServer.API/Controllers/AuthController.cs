@@ -1,5 +1,5 @@
 ﻿using BilliardServer.Application.Features.Users;
-using BilliardServer.Core.Common.Dto.Auth;
+using BilliardServer.Core.Dto.Web.Auth;
 using BilliardServer.Infrastructure.Entities;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;

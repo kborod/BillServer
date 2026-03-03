@@ -2,9 +2,9 @@
 {
     public class Participant
     {
-        public long Id { get; private set; }
+        public string Id { get; private set; }
 
-        public Participant(long id)
+        public Participant(string id)
         {
             Id = id;
         }

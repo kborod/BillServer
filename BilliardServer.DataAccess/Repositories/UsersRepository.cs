@@ -19,6 +19,14 @@ namespace BilliardServer.Infrastructure.Repositories
             _userManager = userManager;
         }
 
+        public async Task<Result<User?>> GetUser(string id)
+        {
+            var entity = await _userManager.FindByIdAsync(id);
+            if (entity == null)
+                return Result<User?>.Fail("User not found");
+            return Result<User?>.Ok(entity.CreateUser());
+        }
+
         public async Task<Result<User?>> GetByEmail(string email)
         {
             var entity = await _userManager.FindByEmailAsync(email);
@@ -29,52 +37,23 @@ namespace BilliardServer.Infrastructure.Repositories
             return Result<User?>.Ok(entity.CreateUser());
         }
 
-        public async Task<List<User>> GetAll()
+        public async Task Update(string id, string name, int avatar)
         {
-            var userEntities = await _context.Users
-                .AsNoTracking()
-                .ToListAsync();
-
-            var users = userEntities
-                .Select(e => e.CreateUser())
-                .ToList();
-
-            return users;
-        }
-
-        //public async Task<User> Create(string name, int avatar)
-        //{
-        //    var userEntity = new UserEntity
-        //    {
-        //        Name = name, 
-        //        Avatar = avatar
-        //    };
-
-        //    await _context.Users.AddAsync(userEntity);
-        //    await _context.SaveChangesAsync();
-
-        //    return userEntity.CreateUser();
-        //}
-
-        public async Task<int> Update(int id, string name, int avatar)
-        {
+            long.TryParse(id, out var userId);
             await _context.Users
-                .Where(u => u.Id == id)
+                .Where(u => u.Id == userId)
                 .ExecuteUpdateAsync(u => u
                     .SetProperty(u => u.Name, p => name)
                     .SetProperty(u => u.Avatar, p => avatar)
                     );
-
-            return id;
         }
 
-        public async Task<int> Delete(int id)
+        public async Task Delete(string id)
         {
+            long.TryParse(id, out var userId);
             await _context.Users
-                .Where(u => u.Id == id)
+                .Where(u => u.Id == userId)
                 .ExecuteDeleteAsync();
-
-            return id;
         }
     }
 }

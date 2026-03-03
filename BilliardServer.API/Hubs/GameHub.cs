@@ -1,6 +1,8 @@
-﻿using BilliardServer.Core.Dto.Hub;
+﻿using BilliardServer.Core.Dto.Messaging;
+using BilliardServer.Core.Dto.Messaging.Responses;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
+using System.Collections.Concurrent;
 using System.Security.Claims;
 using System.Text.Json;
 
@@ -9,6 +11,8 @@ namespace BilliardServer.API.AsyncMessaging.Hubs
     [Authorize]
     public class GameHub : Hub<IResponseSender>
     {
+        private readonly static ConcurrentDictionary<string, string> _connectedUsers = new();
+
         private readonly IMessagingRequestsHandlerService _requestsHandler;
         private readonly ILogger _logger;
 
@@ -20,13 +24,21 @@ namespace BilliardServer.API.AsyncMessaging.Hubs
 
         public async Task ProcessRequest(RequestEnvelope requestEnvelope)
         {
-            var random = new Random();
-            if (random.Next(0, 10) > 6)
-            {
-                return;
-            }
+            //TODO BORODIN messages delivery testing
+            //var random = new Random();
+            //if (random.Next(0, 10) > 6) return;
+
             _logger.LogInformation("---------------------------------------------------------");
             var userId = GetUserId();
+
+            if (_connectedUsers.TryGetValue(userId, out var connection) && connection != Context.ConnectionId)
+            {
+                await Clients.Caller
+                    .AddLogging(_logger, userId)
+                    .ProcessResponse(ResponseEnvelope.Create(new SessionErrorResponseDto("You are Entered from another device")));
+                return;
+            }
+
             _logger.LogInformation(
                 "[Hub]HubMsgReceived: {target} -> SeqNum:{number} {response}",
                 $"UserId:{userId}", requestEnvelope.SequenceNumber, JsonSerializer.Serialize(requestEnvelope));
@@ -37,13 +49,34 @@ namespace BilliardServer.API.AsyncMessaging.Hubs
 
         public override async Task OnConnectedAsync()
         {
-            _logger.LogInformation($"Hub opened (userId:{GetUserId()})");
+            var userId = GetUserId();
+
+            if (_connectedUsers.TryGetValue(userId, out var oldConnection) && oldConnection != Context.ConnectionId)
+            {
+                await Clients.Client(oldConnection)
+                    .AddLogging(_logger, userId)
+                    .ProcessResponse(ResponseEnvelope.Create(new SessionErrorResponseDto("You are Entered from another device")));
+            }
+
+            _connectedUsers[userId] = Context.ConnectionId;
+            _logger.LogInformation($"Hub connected (userId:{userId}; connectionId: {Context.ConnectionId})");
             await base.OnConnectedAsync();
         }
 
         public override async Task OnDisconnectedAsync(Exception? exception)
         {
-            _logger.LogInformation($"Hub closed (userId: {GetUserId()})");
+            var userId = GetUserId();
+
+            if (_connectedUsers.TryGetValue(userId, out var connection) && connection == Context.ConnectionId)
+            {
+                _connectedUsers.TryRemove(userId, out _);
+                _logger.LogInformation($"Hub connection closed (userId: {userId}; connectionId: {connection})");
+            }
+            else
+            {
+                _logger.LogInformation($"Old hub connection closed (userId: {userId}; connectionId: {Context.ConnectionId})");
+            }
+
             await base.OnDisconnectedAsync(exception);
         }
 

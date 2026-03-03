@@ -1,4 +1,4 @@
-﻿namespace BilliardServer.Core.Common.Dto.Web
+﻿namespace BilliardServer.Core.Dto.Web
 {
     public record UserResponse
     (

@@ -1,4 +1,4 @@
-﻿using BilliardServer.Core.Dto.Hub;
+﻿using BilliardServer.Core.Dto.Messaging;
 using System.Text.Json;
 
 namespace BilliardServer.API.AsyncMessaging

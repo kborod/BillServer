@@ -1,5 +1,4 @@
 ﻿using BilliardServer.Core.Common;
-using Microsoft.Extensions.Hosting;
 
 namespace BilliardServer.Application.Abstractions
 {

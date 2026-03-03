@@ -1,6 +1,5 @@
 ﻿using BilliardServer.Application.Abstractions.AsyncMessaging;
-using BilliardServer.Core.Dto.Hub;
-using BilliardServer.Core.Dto.Hub.Responses;
+using BilliardServer.Core.Dto.Messaging.Responses;
 using MediatR;
 
 namespace BilliardServer.Application.Features.Users
@@ -16,7 +15,7 @@ namespace BilliardServer.Application.Features.Users
 
         public Task Handle(ListenHeartbeatCommand request, CancellationToken cancellationToken)
         {
-            _responseSenderService.SendResponseToUser(request.UserId, ResponseEnvelope.Create(new AreYouAliveResponseDto()));
+            _responseSenderService.SendResponseToUser(request.UserId, new AreYouAliveResponseDto());
             return Task.CompletedTask;
         }
     }

@@ -1,8 +1,8 @@
 ﻿using BilliardServer.Application.Features.Users;
 using BilliardServer.Core.Common;
-using BilliardServer.Core.Dto.Hub;
-using BilliardServer.Core.Dto.Hub.Requests;
-using BilliardServer.Core.Dto.Hub.Responses;
+using BilliardServer.Core.Dto.Messaging;
+using BilliardServer.Core.Dto.Messaging.Requests;
+using BilliardServer.Core.Dto.Messaging.Responses;
 using MediatR;
 using System.Collections.Concurrent;
 

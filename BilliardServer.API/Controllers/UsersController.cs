@@ -1,8 +1,7 @@
 ﻿using BilliardServer.Core.Abstractions;
-using BilliardServer.Core.Common.Dto.Web;
+using BilliardServer.Core.Dto.Web;
 using BilliardServer.Core.Enums;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BilliardServer.API.Controllers
@@ -18,14 +17,16 @@ namespace BilliardServer.API.Controllers
             _usersService = usersService;
         }
 
-        [Authorize(Roles = RoleType.User)]
+        [Authorize(Roles = UserRoleType.User)]
         [HttpGet]
-        public async Task<ActionResult<List<UserResponse>>> GetUsers()
+        public async Task<ActionResult<List<UserResponse>>> GetUser(string id)
         {
-            var users = await _usersService.GetAll();
-            var response = users.Select(u => new UserResponse(u.Id, u.Name, u.Avatar));
+            var result = await _usersService.GetUser(id);
 
-            return Ok(users);
+            if (result.IsSuccess)
+                return Ok(result.Value);
+            else
+                return BadRequest(result.Error);
         }
 
         //[Authorize(Roles = RoleType.User)]
