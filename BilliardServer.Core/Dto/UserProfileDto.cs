@@ -1,16 +1,9 @@
-﻿namespace BilliardServer.Core.Dto
+﻿namespace Kborod.SharedDto
 {
     public class UserProfileDto
     {
-        public string Id { get; set; } = null!;
-        public string Username { get; set; } = null!;
-        public string? AvatarUrl { get; set; }
-
-        public UserProfileDto(string id, string username, string? avatarUrl = null)
-        {
-            Id = id;
-            Username = username;
-            AvatarUrl = avatarUrl;
-        }
+        public string Id { get; set; }
+        public string Username { get; set; } 
+        public int Avatar { get; set; }
     }
 }

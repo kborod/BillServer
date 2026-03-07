@@ -8,11 +8,13 @@ using BilliardServer.Application.Features.Users;
 using BilliardServer.Application.Matches;
 using BilliardServer.Application.MatchMaking;
 using BilliardServer.Application.OnlineUsers;
+using BilliardServer.Application.ShotCalculating;
 using BilliardServer.Core.Abstractions;
 using BilliardServer.Infrastructure;
 using BilliardServer.Infrastructure.Entities;
 using BilliardServer.Infrastructure.Repositories;
 using BuilliardServer.Test;
+using Kborod.BilliardCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -158,9 +160,17 @@ public partial class Program
 
         #endregion
 
+        #region Configs
+
         builder.Services.AddOptions<OnlineUsersServiceConfig>()
             .Bind(builder.Configuration.GetSection(OnlineUsersServiceConfig.SectionName))
             .ValidateDataAnnotations();
+
+        builder.Services.AddOptions<MatchesServiceConfig>()
+            .Bind(builder.Configuration.GetSection(MatchesServiceConfig.SectionName))
+            .ValidateDataAnnotations();
+
+        #endregion
 
 
         builder.Services.AddSingleton<ILogger>(sp => sp.GetRequiredService<ILoggerFactory>().CreateLogger(string.Empty));
@@ -184,7 +194,16 @@ public partial class Program
         builder.Services.AddScoped<IAuthService, AuthService>();
         builder.Services.AddTransient<TokenService>();
 
-        //builder.Services.AddHostedService<TestService>();
+
+        builder.Services.AddHostedService<ShotCalculationService>();
+        builder.Services.AddSingleton<ShotCalculationQueue>();
+        builder.Services.AddTransient<IMatchControlFactory, MatchControlFactory>();
+        builder.Services.AddPooled<PoolShotCalculator>(options =>
+        {
+            options.Capacity = 8;
+        });
+
+        builder.Services.AddHostedService<TestService>();
 
 
         builder.Services.AddSignalR();

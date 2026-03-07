@@ -2,18 +2,21 @@
 {
     public struct AimInfo
     {
-        public int? CueBall;
-        public float DirectionX;
-        public float DirectionY;
-        public int? Pocket;
+        public int? CueBall { get; set; }
+        public float DirectionX { get; set; }
+        public float DirectionY { get; set; }
+        public int? Pocket { get; set; }
 
-        public float? CueBallX;
-        public float? CueBallY;
-        public bool IsBallMovingNow;
+        public float? CueBallX { get; set; }
+        public float? CueBallY { get; set; }
 
-        public float SpinX;
-        public float SpinY;
+        public float SpinX { get; set; }
+        public float SpinY { get; set; }
 
-        public float Power;
+        public float Power { get; set; }
+
+        public int CueId { get; set; }
+
+        public bool IsBallMovingNow { get; set; }
     }
 }

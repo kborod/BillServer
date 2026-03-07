@@ -1,3 +1,7 @@
+using Kborod.BilliardCore.Enums;
+using System;
+using System.Collections.Generic;
+
 namespace Kborod.BilliardCore
 {
     public class Config
@@ -41,5 +45,41 @@ namespace Kborod.BilliardCore
         public const float WALL_ELASTIC 	= 0.75f; //Поглощение скорости бортами
 
         public const int COORD_ROUND_TO = 10;//Точность округления координат шаров (например до тысячных = 1000)
+
+        public static List<BallData> GetBallsPositionsForNewGame(GameType gameType, int posNum)
+        {
+            if (gameType != GameType.PoolEight)
+                throw new NotImplementedException();
+
+            var balls = new List<BallData>(16);
+            for (var i = 0; i <= 15; i++)
+            {
+                balls.Add(new BallData { Number = i });
+            }
+
+            balls[0].SetPosition(Config.cueBallPosX, Config.cueBallPosY);
+
+            var x0 = 158f + (posNum - 5);
+            var y0 = 0f + (posNum - 5);
+
+            balls[9].SetPosition(x0, y0);
+            var step = MathF.Sqrt(Config.BALL_DIAM_PX_SQUARED - Config.BALL_RAD_PX_SQUARED) + 0.1f + (0.5f * posNum / 10f);
+            balls[12].SetPosition(x0 + step, y0 - Config.BALL_RAD_PX);
+            balls[7].SetPosition(x0 + step, y0 + Config.BALL_RAD_PX);
+            balls[1].SetPosition(x0 + 2 * step, y0 - 2 * Config.BALL_RAD_PX);
+            balls[8].SetPosition(x0 + 2 * step, y0);
+            balls[15].SetPosition(x0 + 2 * step, y0 + 2 * Config.BALL_RAD_PX);
+            balls[14].SetPosition(x0 + 3 * step, y0 - 3 * Config.BALL_RAD_PX);
+            balls[3].SetPosition(x0 + 3 * step, y0 - 1 * Config.BALL_RAD_PX);
+            balls[10].SetPosition(x0 + 3 * step, y0 + 1 * Config.BALL_RAD_PX);
+            balls[6].SetPosition(x0 + 3 * step, y0 + 3 * Config.BALL_RAD_PX);
+            balls[5].SetPosition(x0 + 4 * step, y0 - 4 * Config.BALL_RAD_PX);
+            balls[4].SetPosition(x0 + 4 * step, y0 - 2 * Config.BALL_RAD_PX);
+            balls[13].SetPosition(x0 + 4 * step, y0);
+            balls[2].SetPosition(x0 + 4 * step, y0 + 2 * Config.BALL_RAD_PX);
+            balls[11].SetPosition(x0 + 4 * step, y0 + 4 * Config.BALL_RAD_PX);
+
+            return balls;
+        }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using BilliardServer.Core.Common;
 using BilliardServer.Core.Models;
+using Kborod.SharedDto;
 
 namespace BilliardServer.Core.Abstractions
 {
@@ -7,7 +8,7 @@ namespace BilliardServer.Core.Abstractions
     {
         Task<Result<User?>> GetUser(string id);
         Task<Result<User?>> GetByEmail(string email);
-        Task Delete(string id);
-        Task Update(string id, string name, int avatar);
+        Task<Result<UserProfileDto>> GetUserProfile(string id);
+        Task<Result<List<UserProfileDto>>> GetUserProfiles(List<string> ids);
     }
 }

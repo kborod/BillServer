@@ -1,9 +1,10 @@
 ﻿using BilliardServer.Application.MatchMaking;
+using BilliardServer.Core.Common;
 using MediatR;
 
 namespace BilliardServer.Application.Features.MatchMaking
 {
-    public class SearchMatchCommandHandler : IRequestHandler<SearchMatchCommand>
+    public class SearchMatchCommandHandler : IRequestHandler<SearchMatchCommand, Result>
     {
         private readonly MatchMakingService _matchMakingService;
 
@@ -12,9 +13,9 @@ namespace BilliardServer.Application.Features.MatchMaking
             _matchMakingService = matchMakingService;
         }
 
-        public async Task Handle(SearchMatchCommand request, CancellationToken cancellationToken)
+        public Task<Result> Handle(SearchMatchCommand request, CancellationToken cancellationToken)
         {
-            await _matchMakingService.SearchMatch(request.UserId, request.gameType, request.betType);
+            return _matchMakingService.SearchMatch(request.UserId, request.gameType, request.betType);
         }
     }
 }

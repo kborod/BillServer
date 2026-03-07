@@ -83,16 +83,16 @@ namespace BilliardServer.API.AsyncMessaging.ReliableMessageDelivery
                 return;
             }
 
-            await _mediator.Publish(new UserHearbeatEvent(userId));
-
             var requests = validateResult.Value;
 
             if (requests == null)
                 return;
 
+            await _mediator.Publish(new UserHearbeatEvent(userId));
+
             foreach (var request in requests)
             {
-                await request.Process(userId, _mediator);
+                await request.Process(userId, _mediator, responseSender);
                 _logger.LogInformation($"[MessageDeliveryService] Request {request.SequenceNumber} processed");
             }
 

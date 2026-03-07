@@ -1,7 +1,7 @@
 ﻿using Kborod.BilliardCore;
 using System.Text.Json.Serialization;
 
-namespace BilliardServer.Core.Dto.Messaging.Requests.MatchMaking
+namespace BilliardServer.Core.Dto.Messaging.Requests.Match
 {
     public class AimInfoDto : IRequest
     {

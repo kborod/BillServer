@@ -4,6 +4,6 @@
     {
         public string MatchId { get; set; }
         public string TurningPlayerId { get; set; }
-        public long EndTurnTimestamp { get; set; }
+        public long TurnEndTimestamp { get; set; }
     }
 }

@@ -38,16 +38,6 @@ namespace Kborod.BilliardCore
         /// Продолжительность удара
         /// </summary>
         public float ShotDuration;
-
-        /// <summary>
-        /// Всего ударов в матче
-        /// </summary>
-        public int MatchShotsCount;
-
-        /// <summary>
-        /// Признак - первый удар в матче
-        /// </summary>
-        public bool IsFirstShot => MatchShotsCount <= 1;
 		
 		public override string ToString()
 		{

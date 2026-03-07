@@ -40,7 +40,7 @@ namespace BilliardServer.API.AsyncMessaging.Hubs
             }
 
             _logger.LogInformation(
-                "[Hub]HubMsgReceived: {target} -> SeqNum:{number} {response}",
+                "[GameHub] HubMsgReceived: {target} -> SeqNum:{number} {response}",
                 $"UserId:{userId}", requestEnvelope.SequenceNumber, JsonSerializer.Serialize(requestEnvelope));
 
             await _requestsHandler.RequestReceivedFromHub(requestEnvelope, userId, Clients.Caller);
@@ -59,7 +59,7 @@ namespace BilliardServer.API.AsyncMessaging.Hubs
             }
 
             _connectedUsers[userId] = Context.ConnectionId;
-            _logger.LogInformation($"Hub connected (userId:{userId}; connectionId: {Context.ConnectionId})");
+            _logger.LogInformation($"[GameHub] Hub connection opened (userId:{userId}; connectionId: {Context.ConnectionId})");
             await base.OnConnectedAsync();
         }
 
@@ -70,11 +70,11 @@ namespace BilliardServer.API.AsyncMessaging.Hubs
             if (_connectedUsers.TryGetValue(userId, out var connection) && connection == Context.ConnectionId)
             {
                 _connectedUsers.TryRemove(userId, out _);
-                _logger.LogInformation($"Hub connection closed (userId: {userId}; connectionId: {connection})");
+                _logger.LogInformation($"[GameHub] Hub connection closed (userId: {userId}; connectionId: {connection})");
             }
             else
             {
-                _logger.LogInformation($"Old hub connection closed (userId: {userId}; connectionId: {Context.ConnectionId})");
+                _logger.LogInformation($"[GameHub] Old hub connection closed (userId: {userId}; connectionId: {Context.ConnectionId})");
             }
 
             await base.OnDisconnectedAsync(exception);
@@ -85,7 +85,7 @@ namespace BilliardServer.API.AsyncMessaging.Hubs
             var userId = Context.User!.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId))
             {
-                _logger.LogError("GetUserId failed: invalid user ID claim");
+                _logger.LogError("[GameHub] GetUserId failed: invalid user ID claim");
                 throw new Exception("Invalid user ID");
             }
                 

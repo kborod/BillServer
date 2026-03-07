@@ -1,5 +1,5 @@
-﻿using BilliardServer.Core.Dto;
-using Kborod.BilliardCore.Enums;
+﻿using Kborod.BilliardCore.Enums;
+using Kborod.SharedDto;
 
 namespace Kborod.BilliardCore
 {
@@ -11,6 +11,5 @@ namespace Kborod.BilliardCore
         public UserProfileDto Opponent { get; set; }
         public int BallsPosition { get; set; }
         public string TurningPlayerId { get; set; }
-        public long EndTurnTimestamp { get; set; }
     }
 }

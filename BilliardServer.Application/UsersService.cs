@@ -1,6 +1,7 @@
 ﻿using BilliardServer.Core.Abstractions;
 using BilliardServer.Core.Common;
 using BilliardServer.Core.Models;
+using Kborod.SharedDto;
 
 namespace Billiard.Application
 {
@@ -13,24 +14,24 @@ namespace Billiard.Application
             _usersRepository = usersRepository;
         }
 
-        public async Task<Result<User?>> GetUser(string id)
+        public Task<Result<User?>> GetUser(string id)
         {
-            return await _usersRepository.GetUser(id);
+            return _usersRepository.GetUser(id);
         }
 
-        public async Task<Result<User?>> GetByEmail(string email)
+        public Task<Result<User?>> GetByEmail(string email)
         {
-            return await _usersRepository.GetByEmail(email);
+            return _usersRepository.GetByEmail(email);
         }
 
-        public async Task Update(string id, string name, int avatar)
+        public Task<Result<UserProfileDto>> GetUserProfile(string id)
         {
-            await _usersRepository.Update(id, name, avatar);
+            return _usersRepository.GetUserProfile(id);
         }
 
-        public async Task Delete(string id)
+        public Task<Result<List<UserProfileDto>>> GetUserProfiles(List<string> ids)
         {
-            await _usersRepository.Delete(id);
+            return _usersRepository.GetUserProfiles(ids);
         }
     }
 }

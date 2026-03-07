@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Kborod.BilliardCore
 {
@@ -20,69 +21,49 @@ namespace Kborod.BilliardCore
 		private float timeToVelUpdate = 0;		//время до следующего обновления скоростей
 		
 		private int cueBallNum = -1;
-
-		private int MatchShotsCount = 0;		//Всего ударов в матче
 		
 		public Engine()
 		{ 
 			createWalls();
 			
 			createPockets();
-
-			//LogCoords();
-		}
-
-        private void LogCoords()
-        {
-			//var deltaX = -380;
-			//var deltaY = -275;// -262.275;
-
-   //         List<Point[]> coords = new List<Point[]>();
-			//foreach (var item in RealWalls)
-			//{
-			//	coords.Add(new Point[] { new Point(item.p0.x, item.p0.y), new Point(item.p1.x, item.p1.y) });
-			//}
-			//var s = "Walls:\n";
-   //         foreach (var pair in coords)
-   //         {
-			//	//s += $"[{pair[0].x + deltaX};{pair[0].y + deltaY}] [{pair[1].x + deltaX};{pair[1].y + deltaY}]\n";
-			//	s += string.Format("{{new Point[]{{new Point({0}, {1}), new Point({2}, {3})}}}},\n", 
-			//		$"{(pair[0].x + deltaX).ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}f",
-   //                 $"{(pair[0].y + deltaY).ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}f",
-			//		$"{(pair[1].x + deltaX).ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}f",
-			//		$"{(pair[1].y + deltaY).ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}f"
-   //                 );
-   //         }
-			//Debug.Log(s);
-
-
-			//coords.Clear();
-   //         foreach (var item in pockets)
-   //         {
-   //             coords.Add(new Point[] { new Point(item.x, item.y), new Point(item.vRemove.vx, item.vRemove.vy) });
-   //         }
-   //         s = "Pockets:\n"; 
-			//foreach (var pair in coords)
-   //         {
-			//	//s += $"[{pair[0].x + deltaX};{pair[0].y + deltaY}] [{pair[1].x};{pair[1].y}]\n";
-			//	s += string.Format("{{new Point[]{{new Point({0},{1}), new Point({2},{3})}}}},\n",
-   //                 $"{(pair[0].x + deltaX).ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}f",
-			//		$"{(pair[0].y + deltaY).ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}f",
-			//		$"{(pair[1].x).ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}f",
-   //                 $"{(pair[1].y).ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}f"
-   //                 );
-   //         }
-   //         Debug.Log(s);
         }
 
-        /**
-		 * Установить координаты шара без проверок
-		 */
-        public void SetBallPosition(int ballNum, float posX, float posY)
-		{
-			Balls[ballNum].SetPosition(posX, posY);
-		}
+        /// <summary> Установить игровую позицию шаров на столе </summary>
+        public void SetBallDatas(List<BallData> ballDatas)
+        {
+            Balls ??= new List<Ball>();
+            if (Balls.Count != ballDatas.Count)
+            {
+                Balls.Clear();
+                for (int i = 0; i < ballDatas.Count; i++)
+                {
+                    Balls.Add(new Ball(i));
+                }
+            }
 
+            resetShotParams();
+            activeBalls.Clear();
+
+            foreach (var ballData in ballDatas)
+            {
+                var b = Balls[ballData.Number];
+                b.ResetParams();
+                b.IsRemoved = ballData.IsRemoved;
+                b.SetPosition(ballData.X, ballData.Y);
+                b.v.vx = 0;
+                b.v.vy = 0;
+                b.v.updatePointsFromComponents();
+            }
+        }
+
+        /// <summary> Получить игровую позицию шаров на столе </summary>
+        public List<BallData> GetBallDatas()
+        {
+            return Balls
+                .Select(b => new BallData { IsRemoved = b.IsRemoved, Number = b.Number, X = b.v.p0.x, Y = b.v.p0.y })
+                .ToList();
+        }
 
 
         /// <summary>
@@ -141,8 +122,8 @@ namespace Kborod.BilliardCore
 				if (Config.BALL_DIAM_PX - vc.len >= -0.01)
                     return false;
             }
-			SetBallPosition(ballNum, tmpX, tmpY);
-			return true;
+            Balls[ballNum].SetPosition(tmpX, tmpY);
+            return true;
 		}
 
         /// <summary>
@@ -167,13 +148,16 @@ namespace Kborod.BilliardCore
 
 			var tmpX = Config.cueBallPosX;
 			var tmpY = Config.cueBallPosY;
-			while (true)
+
+			var attemps = 50;
+			while (attemps > 0)
 			{
 				if (ReplaceBall(ballNum, tmpX, tmpY, onlyKitchen: false, correctionAllowed: true) == true)
 				{
 					return;
 				}
 				tmpX += Config.BALL_RAD_PX;
+				attemps--;
 			}
 		}
 
@@ -207,8 +191,6 @@ namespace Kborod.BilliardCore
 				
 				UpdateNextCollisionTime();
 			}
-
-			MatchShotsCount++;
 		}
 		
 		private float currDt = 0;			//значение дельта, на которое обновляем модель
@@ -238,8 +220,7 @@ namespace Kborod.BilliardCore
 				if (activeBalls.Count == 0) 
 				{					
 					shotCalculateResult.ShotDuration = currShotDuration;
-					shotCalculateResult.MatchShotsCount = MatchShotsCount;
-					roundBallsCoord();
+					RoundBallsCoord();
 					shotResultOrNull = shotCalculateResult;
                     return;
 				}
@@ -1409,98 +1390,25 @@ namespace Kborod.BilliardCore
 				pockets.Add(new Pocket(0, pocketCoord.x, pocketCoord.y, Config.POCKET_RAD_PX, pocketRemoveBallVEctor.x, pocketRemoveBallVEctor.y));
 			}
 		}
-		
-		/**
-		 * Возвращает координаты лузы
-		 * @param	pocketNum
-		 * @return
-		 */
-		public Point getPocketCoord(int pocketNum)
-		{
-			return new Point(pockets[pocketNum].x, pockets[pocketNum].y);
-		}
-		
-		
-		
-		
-		/**
-		 * Установить шары в начальные позиции
-		 */
-		public void PrepeareNewGame(int posNum) 
-		{
-			MatchShotsCount = 0;
 
-			Balls.Clear();
-			for (var i = 0; i <= 15 ; i++) 
-			{
-				Balls.Add(new Ball(i));
-			}
 
-			(Balls[0] as Ball).SetPosition(Config.cueBallPosX, Config.cueBallPosY);
-			var x0 = 158f + (posNum - 5);
-			var y0 = 0f + (posNum - 5);
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////////		
 
-			(Balls[9] as Ball).SetPosition(x0, y0);
-			var step = MathF.Sqrt(Config.BALL_DIAM_PX_SQUARED - Config.BALL_RAD_PX_SQUARED) + 0.1f + (0.5f * posNum / 10f);
-			(Balls[12] as Ball).SetPosition(x0 + step, y0 - Config.BALL_RAD_PX);
-			(Balls[7] as Ball).SetPosition(x0 + step, y0 + Config.BALL_RAD_PX);
-			(Balls[1] as Ball).SetPosition(x0 + 2 * step, y0 - 2 * Config.BALL_RAD_PX);
-			(Balls[8] as Ball).SetPosition(x0 + 2 * step, y0);
-			(Balls[15] as Ball).SetPosition(x0 + 2 * step, y0 + 2 * Config.BALL_RAD_PX);
-			(Balls[14] as Ball).SetPosition(x0 + 3 * step, y0 - 3 * Config.BALL_RAD_PX);
-			(Balls[3] as Ball).SetPosition(x0 + 3 * step, y0 - 1 * Config.BALL_RAD_PX);
-			(Balls[10] as Ball).SetPosition(x0 + 3 * step, y0 + 1 * Config.BALL_RAD_PX);
-			(Balls[6] as Ball).SetPosition(x0 + 3 * step, y0 + 3 * Config.BALL_RAD_PX);
-			(Balls[5] as Ball).SetPosition(x0 + 4 * step, y0 - 4 * Config.BALL_RAD_PX);
-			(Balls[4] as Ball).SetPosition(x0 + 4 * step, y0 - 2 * Config.BALL_RAD_PX);
-			(Balls[13] as Ball).SetPosition(x0 + 4 * step, y0);
-			(Balls[2] as Ball).SetPosition(x0 + 4 * step, y0 + 2 * Config.BALL_RAD_PX);
-			(Balls[11] as Ball).SetPosition(x0 + 4 * step, y0 + 4 * Config.BALL_RAD_PX);
-		}
-		
-		
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////		
-		
 
-		private void roundBallsCoord()
-		{
-			for (var i = 0; i < Balls.Count; i++) 
-			{
-				(Balls[i] as Ball).v.p0.x = (Balls[i] as Ball).v.p1.x = (int)((Balls[i] as Ball).v.p0.x * Config.COORD_ROUND_TO) / (float) Config.COORD_ROUND_TO;
-				(Balls[i] as Ball).v.p0.y = (Balls[i] as Ball).v.p1.y = (int)((Balls[i] as Ball).v.p0.y * Config.COORD_ROUND_TO) / (float) Config.COORD_ROUND_TO;
-			}
-		}
-		
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		/**
-		 * Установить игровую позицию шаров на столе
-		 * @param	posParams
-		 */
-		public void SetBallsPosition(List<BallData> ballPositions)
-		{
-			if (ballPositions.Count != 16) 
-			{
-				ToLog("setBallsPosition Error. a.length:" + ballPositions.Count);
-				return;
-			}
-			
-			resetShotParams();
-			activeBalls.Clear();
-
-			foreach (var ballData in ballPositions)
-			{
-                var b = Balls[ballData.Number];
-				b.ResetParams();
-				b.IsRemoved = ballData.IsRemoved;
-                b.SetPosition(ballData.X, ballData.Y);
-				b.v.vx = 0;
-				b.v.vy = 0;
-				b.v.updatePointsFromComponents();
-
+        private void RoundBallsCoord()
+        {
+            for (var i = 0; i < Balls.Count; i++)
+            {
+                (Balls[i] as Ball).v.p0.x = (Balls[i] as Ball).v.p1.x = RoundDeterministic((Balls[i] as Ball).v.p0.x, 1);
+                (Balls[i] as Ball).v.p0.y = (Balls[i] as Ball).v.p1.y = RoundDeterministic((Balls[i] as Ball).v.p0.y, 1);
             }
-		}
+        }
+
+        public float RoundDeterministic(float value, int digits)
+        {
+            return (float)Math.Round((double)value, digits, MidpointRounding.AwayFromZero);
+        }
 
         /////////////////////ДЛЯ ТЕСТОВ:////////////////////
         private void ToLog(string s)

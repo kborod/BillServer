@@ -1,8 +1,10 @@
 ﻿using BilliardServer.Application.Abstractions.AsyncMessaging;
-using BilliardServer.Application.Matches;
+using BilliardServer.Application.Features.Matches;
+using BilliardServer.Application.Features.MatchMaking;
 using BilliardServer.Core.Common;
 using BilliardServer.Core.Dto.Messaging.Responses.MatchMaking;
 using Kborod.BilliardCore.Enums;
+using MediatR;
 using Microsoft.Extensions.Hosting;
 using System.Collections.Concurrent;
 
@@ -10,22 +12,26 @@ namespace BilliardServer.Application.MatchMaking
 {
     public class MatchMakingService : BackgroundService
     {
-        private IMessagingResponseSenderService _messagingResponseSenderService;
-        private MatchesService _matchesRepository;
+        private readonly IMessagingResponseSenderService _messagingResponseSenderService;
+        private readonly IMediator _mediator;
 
-        private ConcurrentDictionary<(GameType, BetType), ConcurrentDictionary<string, long>> _queues = new();
-        private ConcurrentDictionary<string, (GameType, BetType)> _users = new();
+        private readonly ConcurrentDictionary<(GameType, BetType), ConcurrentDictionary<string, long>> _queues = new();
+        private readonly ConcurrentDictionary<string, (GameType, BetType)> _users = new();
 
-        public MatchMakingService(IMessagingResponseSenderService messagingResponseSenderService, MatchesService matchesRepository)
+        public MatchMakingService(IMessagingResponseSenderService messagingResponseSenderService, IMediator mediator)
         {
             _messagingResponseSenderService = messagingResponseSenderService;
-            _matchesRepository = matchesRepository;
+            _mediator = mediator;
         }
 
-        public Task<Result> SearchMatch(string userId, GameType gameType, BetType betType)
+        public async Task<Result> SearchMatch(string userId, GameType gameType, BetType betType)
         {
             if (_users.ContainsKey(userId))
-                return Task.FromResult(Result.Fail($"User {userId} already waiting"));
+                return Result.Fail($"User {userId} already waiting");
+
+            var isInMatch = await _mediator.Send(new IsUserInMatchCommand(userId));
+            if (isInMatch)
+                return Result.Fail($"User {userId} already in match");
 
             var waitingUsers = _queues.GetOrAdd((gameType, betType), _ => new ConcurrentDictionary<string, long>());
 
@@ -42,16 +48,16 @@ namespace BilliardServer.Application.MatchMaking
             if (opponentId != null)
             {
                 _users.TryRemove(opponentId, out var _);
-                return _matchesRepository.CreateMatch(userId, opponentId, gameType, betType);
+                return await _mediator.Send(new CreateMatchCommand(userId, opponentId, gameType, betType));
             }
             else
             {
                 _users.TryAdd(userId, (gameType, betType));
                 waitingUsers.TryAdd(userId, DateTimeOffset.UtcNow.ToUnixTimeSeconds());
-                _messagingResponseSenderService.SendResponseToUser(userId, new AddedToQueueResponseDto());
+                await _messagingResponseSenderService.SendResponseToUser(userId, new AddedToQueueResponseDto());
             }
 
-            return Task.FromResult(Result.Ok());
+            return Result.Ok();
         }
 
         public Task CancelSearch(string userId, bool withNotice = false)

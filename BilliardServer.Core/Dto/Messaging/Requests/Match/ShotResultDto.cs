@@ -1,7 +1,7 @@
 ﻿using Kborod.BilliardCore;
 using System.Text.Json.Serialization;
 
-namespace BilliardServer.Core.Dto.Messaging.Requests.MatchMaking
+namespace BilliardServer.Core.Dto.Messaging.Requests.Match
 {
     public class ShotResultDto : IRequest
     {
@@ -12,9 +12,9 @@ namespace BilliardServer.Core.Dto.Messaging.Requests.MatchMaking
         public RequestType RequestType => RequestType.ShotResult;
         #endregion
 
-        public SyncronizationInfo SynchronizationInfo { get; set; }
+        public SynchronizationInfo SynchronizationInfo { get; set; }
 
-        public ShotResultDto(SyncronizationInfo synchronizationInfo)
+        public ShotResultDto(SynchronizationInfo synchronizationInfo)
         {
             SynchronizationInfo = synchronizationInfo;
         }

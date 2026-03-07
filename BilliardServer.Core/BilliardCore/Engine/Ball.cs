@@ -2,9 +2,18 @@ using System;
 
 namespace Kborod.BilliardCore
 {
-    public class Ball
+    public class Ball : IBallData
     {
         public int Number { get; private set; }
+
+        /// <summary> признак - находится ли шар на столе (или уже забит) </summary>
+        public bool IsRemoved { get; set; } = false;
+
+		public float X => v.p0.x;
+
+		public float Y => v.p0.x;
+
+
 
         /// <summary> Признак, надо ли обновить состояние после итерации. </summary>
         public bool NeedUpdateState { get; set; } = false;
@@ -31,9 +40,6 @@ namespace Kborod.BilliardCore
         //ШАР ЗАБИТ:
         /// <summary> Луза, в которую забит шар. </summary>
         public Pocket PocketRemoveTo { get; set; } = null;
-
-        /// <summary> признак - находится ли шар на столе (или уже забит) </summary>
-        public bool IsRemoved { get; set; } = false;
 
         /// <summary> Оставшееся неинтегрированное время тика после забития шара </summary>
         public float RemoveDeltaTime { get;  set; }  = 0;
