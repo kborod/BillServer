@@ -1,0 +1,162 @@
+using System;
+
+public readonly struct Fixed64 : IComparable<Fixed64>, IEquatable<Fixed64>
+{
+    private readonly float _value;
+
+    public long Raw => Fixed64Dub.FromFloat(this._value).Raw;
+
+    public Fixed64(long raw)
+    {
+        _value = new Fixed64Dub(raw).ToFloat();
+    }
+
+    // ---------------- constants ----------------
+
+    public static readonly Fixed64 Zero = FromFloat(0);
+    public static readonly Fixed64 One = FromFloat(1f);
+    public static readonly Fixed64 Half = FromFloat(0.5f);
+    public static readonly Fixed64 Two = FromFloat(2f);
+    public static readonly Fixed64 Three = FromFloat(3f);
+    public static readonly Fixed64 Four = FromFloat(4f);
+    public static readonly Fixed64 Five = FromFloat(5f);
+
+    public static readonly Fixed64 Pi = FromDouble(3.14159265358979323846);
+    public static readonly Fixed64 TwoPi = FromDouble(6.28318530717958647692);
+    public static readonly Fixed64 PiHalf = FromDouble(1.5707963267948966);
+
+    // ---------------- conversion ----------------
+
+    public static Fixed64 FromInt(int v)
+    {
+        return new Fixed64(Fixed64Dub.FromInt(v).Raw);
+    }
+
+    public int ToInt()
+    {
+        return (int)_value;
+    }
+
+    public static Fixed64 FromFloat(float v)
+    {
+        return new Fixed64(Fixed64Dub.FromFloat(v).Raw);
+    }
+
+    public float ToFloat()
+    {
+        return _value;
+    }
+
+    public static Fixed64 FromDouble(double v)
+    {
+        var f = (float)v;
+        if (float.IsInfinity(f))
+            throw new ArgumentException("Infinity!!!!");
+        return new Fixed64(Fixed64Dub.FromFloat(f).Raw);
+    }
+
+    public double ToDouble()
+    {
+        return (double)_value;
+    }
+
+    // ---------------- operators ----------------
+
+    public static Fixed64 operator +(Fixed64 a, Fixed64 b)
+        => FromFloat(a.ToFloat() + b.ToFloat());
+
+    public static Fixed64 operator -(Fixed64 a, Fixed64 b)
+        => FromFloat(a.ToFloat() - b.ToFloat());
+
+    public static Fixed64 operator -(Fixed64 v)
+        => FromFloat(-v.ToFloat());
+
+    public static bool operator >(Fixed64 a, Fixed64 b) => a.ToFloat() > b.ToFloat();
+    public static bool operator <(Fixed64 a, Fixed64 b) => a.ToFloat() < b.ToFloat();
+    public static bool operator >=(Fixed64 a, Fixed64 b) => a.ToFloat() >= b.ToFloat();
+    public static bool operator <=(Fixed64 a, Fixed64 b) => a.ToFloat() <= b.ToFloat();
+    public static bool operator ==(Fixed64 a, Fixed64 b) => a.ToFloat() == b.ToFloat();
+    public static bool operator !=(Fixed64 a, Fixed64 b) => a.ToFloat() != b.ToFloat();
+
+    // ---------------- safe multiply ----------------
+
+    public static Fixed64 operator *(Fixed64 a, Fixed64 b)
+    {
+        return FromFloat(a.ToFloat() * b.ToFloat());
+    }
+
+    // ---------------- division ----------------
+
+    public static Fixed64 operator /(Fixed64 a, Fixed64 b)
+    {
+        
+        return FromFloat(a.ToFloat() / b.ToFloat());
+    }
+
+    // ---------------- math helpers ----------------
+
+    public static Fixed64 Abs(Fixed64 v)
+    {
+        return FromFloat( MathF.Abs(v.ToFloat()));
+    }
+
+    public static Fixed64 Min(Fixed64 a, Fixed64 b)
+    {
+        return FromFloat(MathF.Min(a.ToFloat(), b.ToFloat()));
+    }
+
+    public static Fixed64 Max(Fixed64 a, Fixed64 b)
+    {
+        return a > b ? a : b;
+    }
+
+    public static Fixed64 Clamp(Fixed64 v, Fixed64 min, Fixed64 max)
+    {
+        if (v < min) return min;
+        if (v > max) return max;
+        return v;
+    }
+
+    public static Fixed64 Lerp(Fixed64 a, Fixed64 b, Fixed64 t)
+    {
+        return a + (b - a) * t;
+    }
+
+    // ---------------- deterministic sqrt ----------------
+    public static Fixed64 Sqrt(Fixed64 x)
+    {
+        return FromFloat(MathF.Sqrt(x.ToFloat()));
+    }
+
+    // ---------------- sin/cos LUT ----------------
+
+    public static Fixed64 Sin(Fixed64 angle)
+    {
+        return FromFloat(MathF.Sin(angle.ToFloat()));
+    }
+
+    public static Fixed64 Cos(Fixed64 angle)
+    {
+        return FromFloat(MathF.Cos(angle.ToFloat()));
+    }
+
+    // ---------------- misc ----------------
+
+    public int CompareTo(Fixed64 other)
+        => _value.CompareTo(other.ToFloat());
+
+    public bool Equals(Fixed64 other)
+        => _value == other.ToFloat();
+
+    public override bool Equals(object obj)
+        => obj is Fixed64 f && f.ToFloat() == _value;
+
+    public override int GetHashCode()
+        => _value.GetHashCode();
+
+    public override string ToString()
+        => ToDouble().ToString();
+
+    public static Fixed64 MaxValue
+        => FromInt(16777216);
+}

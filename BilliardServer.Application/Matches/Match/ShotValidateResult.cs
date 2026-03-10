@@ -4,6 +4,7 @@
     {
         None,
         Ok,
+        DesyncServerWithFront,
         Player1Desync,
         Player2Desync,
         FullDesync

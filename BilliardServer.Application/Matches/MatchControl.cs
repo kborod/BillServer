@@ -21,6 +21,11 @@ namespace BilliardServer.Application.Matches
 
         private MatchBase _match;
 
+        private PlayersInitResults _playersInitResults = new PlayersInitResults();
+        private MakeShotResults _turnResults = new MakeShotResults();
+
+        private object _lockObj = new object();
+
         public MatchControl(IMediator mediator, IMessagingResponseSenderService responsesSender, ILogger logger, CreateMatchContext context)
         {
             Context = context;
@@ -74,8 +79,19 @@ namespace BilliardServer.Application.Matches
             if (_match.State != MatchState.WaitingPlayersInit)
                 return Result.Fail($"Match state != {MatchState.WaitingPlayersInit}");
 
-            _match.SetPlayerInited(playerId);
-            TryCompleteTurn();
+            lock(_lockObj)
+            {
+                if (playerId == _match.Player1)
+                    _playersInitResults.SetPlayer1Inited();
+                else
+                    _playersInitResults.SetPlayer2Inited(); 
+                
+                if (_playersInitResults.IsAllClientsInited() == true)
+                {
+                    _match.PlayersInitedHandler();
+                    StartTurn();
+                }
+            }
 
             return Result.Ok();
         }
@@ -100,7 +116,7 @@ namespace BilliardServer.Application.Matches
 
             _ = _responsesSender.SendResponseToUser(_match.GetOpponent(playerId), new MakeShotResponseDto(data));
 
-            var calculateContext = _match.GetShotContext(data.AimInfo, GetCuePower(data.AimInfo.CueId));
+            var calculateContext = _match.GetContextForCalculateShot(data.AimInfo, GetCuePower(data.AimInfo.CueId));
 
             _ = _mediator.Send(new CalculateShotCommand(calculateContext));
 
@@ -109,26 +125,42 @@ namespace BilliardServer.Application.Matches
 
         public Result ShotResultReceived(string playerId, SynchronizationInfo data)
         {
-            _logger.LogWarning($"ShotResultReceived received {playerId}");
-
             if (_match.State != MatchState.WaitingTurnResults)
-                return Result.Fail("Ignored");
+            {
+                MatchDesynced(playerId == _match.Player1 ? ShotValidateResult.Player1Desync : ShotValidateResult.Player2Desync);
+                return Result.Fail($"error: shotResult recieved in match state  ({_match.State})");
+            }
 
-            _match.SetPlayerTurnResult(playerId, data.RulesShotResult);
-            TryCompleteTurn();
+            lock (_lockObj)
+            {
+                if (playerId == _match.Player1)
+                    _turnResults.SetPlayer1Result(data.RulesShotResult);
+                else
+                    _turnResults.SetPlayer2Result(data.RulesShotResult);
+
+                TryCompleteTurn();
+            }
 
             return Result.Ok();
         }
 
         public void ShotCalculated(ITurnResult turnResult)
         {
-            _logger.LogWarning("ShotCalculated received");
             if (turnResult == null)
             {
-                ProcessMatchDesync(ShotValidateResult.FullDesync);
+                _logger.LogCritical("[MatchControl] ShotCalculated received is null");
+                MatchDesynced(ShotValidateResult.FullDesync);
                 return;
             }
-            _match.SetCalculatedTurnResult(turnResult);
+
+            if (_match.State != MatchState.WaitingTurnResults)
+            {
+                _logger.LogCritical($"[MatchControl] TurnResult received when state is {_match.State}");
+                MatchDesynced(ShotValidateResult.FullDesync);
+                return;
+            }
+
+            _turnResults.SetCalculateResult(turnResult);
             TryCompleteTurn();
         }
 
@@ -140,26 +172,31 @@ namespace BilliardServer.Application.Matches
 
         private void TryCompleteTurn()
         {
-            _logger.LogWarning("TrySendNewTurnToPlayers");
-            if (_match.State == MatchState.ShotValidationError)
+            if (_turnResults.IsAllResultsReceived() == false)
+                return;
+
+            if (_turnResults.Validate() != ShotValidateResult.Ok)
             {
-                _logger.LogCritical($"Validation result: {_match.LastShotValidationResult}");
-                _logger.LogCritical($"Validation desync log: {_match.LastShotValidationDesyncLog}");
+                _logger.LogCritical($"Validation result: {_turnResults.LastValidateResult}\nValidation desync log: {_turnResults.DesyncLog}");
+                MatchDesynced(_turnResults.LastValidateResult);
+                return;
             }
-            else if (_match.State == MatchState.PrepeareTurn)
+
+            _match.ProcessTurnResult(_turnResults.CalculatedResult!);
+
+            if (_match.State == MatchState.PrepeareTurn)
             {
-                var startTurnData = new StartTurnData()
-                {
-                    MatchId = _match.Id,
-                    TurningPlayerId = _match.TurningPlayer,
-                    TurnEndTimestamp = _match.StateEndTimestamp,
-                };
-                _ = _responsesSender.SendResponseToUser(_match.Player1, new StartTurnResponseDto(startTurnData));
-                _ = _responsesSender.SendResponseToUser(_match.Player2, new StartTurnResponseDto(startTurnData));
+                StartTurn();
             }
+            else if (_match.State == MatchState.Over)
+            {
+                MatchOver(_turnResults.CalculatedResult!);
+            }
+
+            _turnResults.Clear();
         }
 
-        private float GetCuePower(int cueId)
+        private int GetCuePower(int cueId)
         {
             //TODO BORODIN добавить реализацию
             return 300;
@@ -171,7 +208,25 @@ namespace BilliardServer.Application.Matches
             return true;
         }
 
-        private void ProcessMatchDesync(ShotValidateResult validateResult)
+        private void StartTurn()
+        {
+            var startTurnData = new StartTurnData()
+            {
+                MatchId = _match.Id,
+                TurningPlayerId = _match.TurningPlayer,
+                TurnEndTimestamp = _match.StateEndTimestamp,
+            };
+            _ = _responsesSender.SendResponseToUser(_match.Player1, new StartTurnResponseDto(startTurnData));
+            _ = _responsesSender.SendResponseToUser(_match.Player2, new StartTurnResponseDto(startTurnData));
+        }
+
+        private void MatchOver(ITurnResult turnResult)
+        {
+            //TODO BORODIN добавить реализацию
+            _logger.LogError($"[MatchControl] matchId  {_match.Id} over. WinnerId: {turnResult.RulesResult.WinUserIdOrNull}");
+        }
+
+        private void MatchDesynced(ShotValidateResult validateResult)
         {
             //TODO BORODIN добавить реализацию
             _logger.LogError($"[MatchControl] matchId  {_match.Id} desync: {validateResult}");

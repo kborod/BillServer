@@ -52,7 +52,7 @@ namespace BilliardServer.Application.Matches.Match
             }
             else if (HasDifference(Player1Result!, CalculatedResult!.RulesResult!))
             {
-                LastValidateResult =  ShotValidateResult.FullDesync;
+                LastValidateResult =  ShotValidateResult.DesyncServerWithFront;
             }
             else
             {

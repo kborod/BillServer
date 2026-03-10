@@ -3,14 +3,14 @@ namespace Kborod.BilliardCore
     public class Pocket
     {
         public int pocketNum;
-		public float x;
-		public float y;
+		public Fixed64 x;
+		public Fixed64 y;
 
         //шар забит:
         /// <summary>
         /// Радиус лузы
         /// </summary>
-        public float r;
+        public Fixed64 r;
         /// <summary>
         /// Вектор "скатывания" шара под стол
         /// </summary>
@@ -28,7 +28,7 @@ namespace Kborod.BilliardCore
 		 * @param	vx Вектор для анимирования "Шар в лузе", в направлении которого шар уходит из лузы
 		 * @param	vy Вектор для анимирования "Шар в лузе", в направлении которого шар уходит из лузы
 		 */
-		public Pocket(int pocketNum, float x, float y, float r, float vx, float vy)
+		public Pocket(int pocketNum, Fixed64 x, Fixed64 y, Fixed64 r, Fixed64 vx, Fixed64 vy)
         {
             this.pocketNum = pocketNum;
             this.x = x;

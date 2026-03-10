@@ -7,6 +7,5 @@
         PrepeareTurn,
         WaitingTurnResults,
         Over,
-        ShotValidationError,
     }
 }

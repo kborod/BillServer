@@ -9,40 +9,40 @@ namespace Kborod.BilliardCore
         public const float MODEL_COORD_TO_WORLD_KOEF = 0.0162f;
 
         // !!!250 максимальная длина вектора скорости шара
-        public const float MAX_SHOT_POWER           = 300f;
+        public static readonly Fixed64 MAX_SHOT_POWER           = Fixed64.FromInt(300);
 
-        public const int SPEED_UPDATE_DELTA = 100;	//через каждый SPEED_UPDATE_DELTA происходит корректировка векторов движения (трение, вращение и т.д.)
-		public const int BALLS_INTEGRATE_DELTA = 10;	//через каждый BALLS_INTEGRATE_DELTA происходит интегрирование модели
+        public static readonly Fixed64 SPEED_UPDATE_DELTA = Fixed64.FromInt(100);    //через каждый SPEED_UPDATE_DELTA происходит корректировка векторов движения (трение, вращение и т.д.)
+        public static readonly Fixed64 BALLS_INTEGRATE_DELTA = Fixed64.FromInt(10);	//через каждый BALLS_INTEGRATE_DELTA происходит интегрирование модели
 
-        public const float BALL_DIAM_PX 			= 18;
-		public const float BALL_DIAM_PX_SQUARED 	= 18 * 18;
-        public const float BALL_RAD_PX              = 9;
-		public const float BALL_RAD_PX_SQUARED		= 9 * 9;
+        public static readonly Fixed64 BALL_DIAM_PX 			= Fixed64.FromInt(18);
+		public static readonly Fixed64 BALL_DIAM_PX_SQUARED 	= Fixed64.FromInt(18 * 18);
+        public static readonly Fixed64 BALL_RAD_PX              = Fixed64.FromInt(9);
+		public static readonly Fixed64 BALL_RAD_PX_SQUARED		= Fixed64.FromInt(9 * 9);
 
-        public const float BALL_FRICTION 		    = 0.04f;    //!!!0.06  Базовый коэфф трения качения шара
-        public const float VERTICAL_ROTATION_POWER = 0.07f; 	//Мощность влияния вертикального винта на траекторию
-		public const float VERTICAL_ROTATION_DISSIPARATION = 5f;	//Скорость рассеивания вертикального винта (значение длины вектора, на который вектор винта сближается с вектором поступательного движения)
-		public const float VERTICAL_ROTATION_WALL_ABSORB = 0.8f;	//Коэффициент поглощения вертикального винта при столкновении с бортом
-		//public const float SIDE_ROTATION_POWER = 0.15f;		//Можность влияния бокового винта на траекторию отскока (длина вектора для корректировки) (доля от MAX_SHOT_POWER)
-		public const float SIDE_ROTATION_DISSIPARATION = 0.95f;		//Скорость рассеивания бокового винта
+        public static readonly Fixed64 BALL_FRICTION 		            = Fixed64.FromDouble(0.04);    //!!!0.06  Базовый коэфф трения качения шара
+        public static readonly Fixed64 VERTICAL_ROTATION_POWER          = Fixed64.FromDouble(0.07); 	//Мощность влияния вертикального винта на траекторию
+		public static readonly Fixed64 VERTICAL_ROTATION_DISSIPARATION  = Fixed64.FromDouble(5);	//Скорость рассеивания вертикального винта (значение длины вектора, на который вектор винта сближается с вектором поступательного движения)
+		public static readonly Fixed64 VERTICAL_ROTATION_WALL_ABSORB    = Fixed64.FromDouble(0.8); //Коэффициент поглощения вертикального винта при столкновении с бортом
+                                                                                                    //public const float SIDE_ROTATION_POWER = 0.15f;		//Можность влияния бокового винта на траекторию отскока (длина вектора для корректировки) (доля от MAX_SHOT_POWER)
+        public static readonly Fixed64 SIDE_ROTATION_DISSIPARATION = Fixed64.FromDouble(0.95);		//Скорость рассеивания бокового винта
         
-        public const float MAX_VERTICAL_ROTATION_LEN = 120f;	//Максимальное значение придаваемого вертикального винта (при spiVx == 1 или -1)
-		public const float MAX_SIDE_ROTATION_LEN    = 20f;      //Максимальное значение придаваемого бокового винта (при spiVx == 1 или -1)
+        public static readonly Fixed64 MAX_VERTICAL_ROTATION_LEN = Fixed64.FromDouble(120);	//Максимальное значение придаваемого вертикального винта (при spiVx == 1 или -1)
+		public static readonly Fixed64 MAX_SIDE_ROTATION_LEN    = Fixed64.FromDouble(20);      //Максимальное значение придаваемого бокового винта (при spiVx == 1 или -1)
 
-        public const int headLineX			= -155;
-		public const int leftBorderX 		= -310;
-		public const int rightBorderX 		= 310;
-		public const int topBorderY			= 155;
-		public const int bottomBorderY		= -155;
-		public const float cueBallPosX		= -180;
-		public const float cueBallPosY		= 0;
+        public static readonly Fixed64 headLineX			= Fixed64.FromInt(-155);
+		public static readonly Fixed64 leftBorderX 		    = Fixed64.FromInt(-310);
+		public static readonly Fixed64 rightBorderX 		= Fixed64.FromInt(310);
+		public static readonly Fixed64 topBorderY			= Fixed64.FromInt(155);
+		public static readonly Fixed64 bottomBorderY		= Fixed64.FromInt(-155);
+		public static readonly Fixed64 cueBallPosX		    = Fixed64.FromInt(-180);
+		public static readonly Fixed64 cueBallPosY		    = Fixed64.FromInt(0);
 
-        public const int POCKET_RAD_PX 			= 18;
-		public const int POCKET_RAD_PX_SQUARED 	= 18 * 18;
+        public static readonly Fixed64 POCKET_RAD_PX 			= Fixed64.FromInt(18);
+        public static readonly Fixed64 POCKET_RAD_PX_SQUARED 	= Fixed64.FromInt(18 * 18);
 
-        public const float BALL_COLLISION_POWER_MISS = 0.95f;	//Коэффициент потери энергии на столкновение шаров
+        public static readonly Fixed64 BALL_COLLISION_POWER_MISS = Fixed64.FromDouble(0.95);	//Коэффициент потери энергии на столкновение шаров
 
-        public const float WALL_ELASTIC 	= 0.75f; //Поглощение скорости бортами
+        public static readonly Fixed64 WALL_ELASTIC 	= Fixed64.FromDouble(0.75); //Поглощение скорости бортами
 
         public const int COORD_ROUND_TO = 10;//Точность округления координат шаров (например до тысячных = 1000)
 
@@ -57,27 +57,31 @@ namespace Kborod.BilliardCore
                 balls.Add(new BallData { Number = i });
             }
 
-            balls[0].SetPosition(Config.cueBallPosX, Config.cueBallPosY);
+            ((BallData)balls[0]).SetPosition(Config.cueBallPosX, Config.cueBallPosY);
 
-            var x0 = 158f + (posNum - 5);
-            var y0 = 0f + (posNum - 5);
+
+            var fPosNum = Fixed64.FromInt(posNum);
+
+            var x0 = Fixed64.FromDouble(158) + (fPosNum - Fixed64.Five);
+            var y0 = Fixed64.Zero + (fPosNum - Fixed64.Five);
+
 
             balls[9].SetPosition(x0, y0);
-            var step = MathF.Sqrt(Config.BALL_DIAM_PX_SQUARED - Config.BALL_RAD_PX_SQUARED) + 0.1f + (0.5f * posNum / 10f);
+            var step = Fixed64.Sqrt(Config.BALL_DIAM_PX_SQUARED - Config.BALL_RAD_PX_SQUARED) + Fixed64.FromDouble(0.1) + (Fixed64.FromDouble(0.5) * fPosNum / Fixed64.FromInt(10));
             balls[12].SetPosition(x0 + step, y0 - Config.BALL_RAD_PX);
             balls[7].SetPosition(x0 + step, y0 + Config.BALL_RAD_PX);
-            balls[1].SetPosition(x0 + 2 * step, y0 - 2 * Config.BALL_RAD_PX);
-            balls[8].SetPosition(x0 + 2 * step, y0);
-            balls[15].SetPosition(x0 + 2 * step, y0 + 2 * Config.BALL_RAD_PX);
-            balls[14].SetPosition(x0 + 3 * step, y0 - 3 * Config.BALL_RAD_PX);
-            balls[3].SetPosition(x0 + 3 * step, y0 - 1 * Config.BALL_RAD_PX);
-            balls[10].SetPosition(x0 + 3 * step, y0 + 1 * Config.BALL_RAD_PX);
-            balls[6].SetPosition(x0 + 3 * step, y0 + 3 * Config.BALL_RAD_PX);
-            balls[5].SetPosition(x0 + 4 * step, y0 - 4 * Config.BALL_RAD_PX);
-            balls[4].SetPosition(x0 + 4 * step, y0 - 2 * Config.BALL_RAD_PX);
-            balls[13].SetPosition(x0 + 4 * step, y0);
-            balls[2].SetPosition(x0 + 4 * step, y0 + 2 * Config.BALL_RAD_PX);
-            balls[11].SetPosition(x0 + 4 * step, y0 + 4 * Config.BALL_RAD_PX);
+            balls[1].SetPosition(x0 + Fixed64.Two * step, y0 - Fixed64.Two * Config.BALL_RAD_PX);
+            balls[8].SetPosition(x0 + Fixed64.Two * step, y0);
+            balls[15].SetPosition(x0 + Fixed64.Two * step, y0 + Fixed64.Two * Config.BALL_RAD_PX);
+            balls[14].SetPosition(x0 + Fixed64.Three * step, y0 - Fixed64.Three * Config.BALL_RAD_PX);
+            balls[3].SetPosition(x0 + Fixed64.Three * step, y0 - Fixed64.One * Config.BALL_RAD_PX);
+            balls[10].SetPosition(x0 + Fixed64.Three * step, y0 + Fixed64.One * Config.BALL_RAD_PX);
+            balls[6].SetPosition(x0 + Fixed64.Three * step, y0 + Fixed64.Three * Config.BALL_RAD_PX);
+            balls[5].SetPosition(x0 + Fixed64.Four * step, y0 - Fixed64.Four * Config.BALL_RAD_PX);
+            balls[4].SetPosition(x0 + Fixed64.Four * step, y0 - Fixed64.Two * Config.BALL_RAD_PX);
+            balls[13].SetPosition(x0 + Fixed64.Four * step, y0);
+            balls[2].SetPosition(x0 + Fixed64.Four * step, y0 + Fixed64.Two * Config.BALL_RAD_PX);
+            balls[11].SetPosition(x0 + Fixed64.Four * step, y0 + Fixed64.Four * Config.BALL_RAD_PX);
 
             return balls;
         }

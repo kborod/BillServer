@@ -17,8 +17,8 @@ namespace Kborod.BilliardCore
 		private List<Angle> angles = new List<Angle>(); 		//углы (шары с центром в углах)
 		private List<Pocket> pockets = new List<Pocket>();		//Лузы
 		
-		private float currShotDuration = 0;     //время текущего текущего удара
-		private float timeToVelUpdate = 0;		//время до следующего обновления скоростей
+		private Fixed64 currShotDuration = Fixed64.Zero;     //время текущего текущего удара
+		private Fixed64 timeToVelUpdate = Fixed64.Zero;		//время до следующего обновления скоростей
 		
 		private int cueBallNum = -1;
 		
@@ -50,9 +50,9 @@ namespace Kborod.BilliardCore
                 var b = Balls[ballData.Number];
                 b.ResetParams();
                 b.IsRemoved = ballData.IsRemoved;
-                b.SetPosition(ballData.X, ballData.Y);
-                b.v.vx = 0;
-                b.v.vy = 0;
+                b.SetPosition(new Fixed64(ballData.Xraw), new Fixed64(ballData.Yraw));
+                b.v.vx = Fixed64.Zero;
+                b.v.vy = Fixed64.Zero;
                 b.v.updatePointsFromComponents();
             }
         }
@@ -61,7 +61,8 @@ namespace Kborod.BilliardCore
         public List<BallData> GetBallDatas()
         {
             return Balls
-                .Select(b => new BallData { IsRemoved = b.IsRemoved, Number = b.Number, X = b.v.p0.x, Y = b.v.p0.y })
+                .Select(b => new BallData { IsRemoved = b.IsRemoved, 
+					Number = b.Number, Xraw = b.v.p0.x.Raw, Yraw = b.v.p0.y.Raw })
                 .ToList();
         }
 
@@ -72,7 +73,7 @@ namespace Kborod.BilliardCore
 		/// новые координаты и возвращает true. 
         /// </summary>
         /// <returns>Если позиция не корректна, то возвращает false, иначе true</returns>
-        public bool ReplaceBall(int ballNum, float posX, float posY, bool onlyKitchen, bool correctionAllowed)
+        public bool ReplaceBall(int ballNum, Fixed64 posX, Fixed64 posY, bool onlyKitchen, bool correctionAllowed)
 		{
 			// TODO Добавить алгоритм выталкивания шара из кучи других шаров
 			var tmpX = posX;
@@ -80,14 +81,14 @@ namespace Kborod.BilliardCore
 			if (posX < Config.leftBorderX + Config.BALL_RAD_PX)
 			{
 				if (!correctionAllowed) return false;
-				tmpX = Config.leftBorderX + Config.BALL_RAD_PX + 0.01f;
+				tmpX = Config.leftBorderX + Config.BALL_RAD_PX + Fixed64.FromDouble(0.01);
 			}
 			if (onlyKitchen)
 			{
 				if (posX > Config.headLineX - Config.BALL_RAD_PX)
 				{
                     if (!correctionAllowed) return false;
-                    tmpX = Config.headLineX - Config.BALL_RAD_PX - 0.01f;
+                    tmpX = Config.headLineX - Config.BALL_RAD_PX - Fixed64.FromDouble(0.01);
 				}
 			}
 			else
@@ -95,18 +96,18 @@ namespace Kborod.BilliardCore
 				if (posX > Config.rightBorderX - Config.BALL_RAD_PX)
                 {
                     if (!correctionAllowed) return false;
-                    tmpX = Config.rightBorderX - Config.BALL_RAD_PX - 0.01f; 
+                    tmpX = Config.rightBorderX - Config.BALL_RAD_PX - Fixed64.FromDouble(0.01); 
 				}
 			}
 			if (posY > Config.topBorderY - Config.BALL_RAD_PX)
 			{
                 if (!correctionAllowed) return false;
-                tmpY = Config.topBorderY - Config.BALL_RAD_PX - 0.01f;
+                tmpY = Config.topBorderY - Config.BALL_RAD_PX - Fixed64.FromDouble(0.01);
 			}
 			if (posY < Config.bottomBorderY + Config.BALL_RAD_PX)
             {
                 if (!correctionAllowed) return false;
-                tmpY = Config.bottomBorderY + Config.BALL_RAD_PX + 0.01f;
+                tmpY = Config.bottomBorderY + Config.BALL_RAD_PX + Fixed64.FromDouble(0.01);
 			}
 
 			foreach (var ball in Balls)
@@ -119,7 +120,7 @@ namespace Kborod.BilliardCore
 				vc.updateComponentsFromPoints();
 				vc.makeVector();
 
-				if (Config.BALL_DIAM_PX - vc.len >= -0.01)
+				if (Config.BALL_DIAM_PX - vc.len >= -Fixed64.FromDouble(0.01))
                     return false;
             }
             Balls[ballNum].SetPosition(tmpX, tmpY);
@@ -163,9 +164,9 @@ namespace Kborod.BilliardCore
 
 
         /// <summary> Установить компоненты скорости шару (произвести удар по шару) </summary>
-        public void MakeShot(float vx, float vy, int ballNumber, float spinVx, float spinVy)
+        public void MakeShot(Fixed64 vx, Fixed64 vy, int ballNumber, Fixed64 spinVx, Fixed64 spinVy)
 		{
-			if (activeBalls.Count > 0 && currShotDuration > 0)
+			if (activeBalls.Count > 0 && currShotDuration > Fixed64.Zero)
 			{
                 ToLogError("ERROR makeShot(): shot under process");
 				return;
@@ -193,8 +194,8 @@ namespace Kborod.BilliardCore
 			}
 		}
 		
-		private float currDt = 0;			//значение дельта, на которое обновляем модель
-		private float lastDt = 0;			//Значение дельта, оставшееся с предыдущей итерации
+		private Fixed64 currDt = Fixed64.Zero;			//значение дельта, на которое обновляем модель
+		private Fixed64 lastDt = Fixed64.Zero;			//Значение дельта, оставшееся с предыдущей итерации
 		
 		
 		/**
@@ -204,29 +205,32 @@ namespace Kborod.BilliardCore
 		 * @param	dt
 		 * дельта времени
 		 */
-		public void UpdateModel(int deltaTime, out ShotTickResult tickResult, out ShotResult shotResultOrNull)
+		public void UpdateModel(int deltaTimeMs, out ShotTickResult tickResult, out ShotResult shotResultOrNull)
 		{
-			if (deltaTime <= 0) { ToLogError("ERROR updateModel. deltaTime:" + deltaTime); }
+			if (deltaTimeMs <= 0) { ToLogError("ERROR updateModel. deltaTime:" + deltaTimeMs); }
+
+			deltaTimeMs = deltaTimeMs > Fixed64.MaxValue.ToInt() ? Fixed64.MaxValue.ToInt() : deltaTimeMs;
 
             tickResult = new ShotTickResult();
-			tickResult.SetDeltaTime(deltaTime);
+			tickResult.SetDeltaTime(deltaTimeMs);
             shotResultOrNull = null;
 
-            currDt = deltaTime + lastDt;
+            currDt = Fixed64.FromInt(deltaTimeMs);
+			currDt += lastDt;
 
             //выполнять, пока не будут просчитаны все столкновения за deltatime
             while (true)
 			{
 				if (activeBalls.Count == 0) 
 				{					
-					shotCalculateResult.ShotDuration = currShotDuration;
-					RoundBallsCoord();
+					shotCalculateResult.ShotDuration = currShotDuration.ToDouble();
+					//RoundBallsCoord();
 					shotResultOrNull = shotCalculateResult;
                     return;
 				}
 				
 				var needUpdateCollTime = false;
-				var minValueTmp = (float) Config.BALLS_INTEGRATE_DELTA;
+				var minValueTmp = Config.BALLS_INTEGRATE_DELTA;
 
 				if (minValueTmp > currDt) { minValueTmp = currDt; }
 				if (minValueTmp > collisions.TimeToCollision) { minValueTmp = collisions.TimeToCollision; }
@@ -275,14 +279,13 @@ namespace Kborod.BilliardCore
 			}
 		}
 		
-		private float tKoef;
 		/**
 		 * Интегрировать состояние модели на deltaTime без просчета столкновений (только переместить шары).
 		 * @param	deltaTime
 		 */
-		private void IntegrateModel(float deltaTime)
+		private void IntegrateModel(Fixed64 deltaTime)
 		{
-			tKoef = deltaTime / Config.SPEED_UPDATE_DELTA;
+			var tKoef = deltaTime / Config.SPEED_UPDATE_DELTA;
 			
 			for (var i = 0; i < Balls.Count; i++) 
 			{
@@ -353,7 +356,7 @@ namespace Kborod.BilliardCore
 			var timeToNextColl = getTimeToNextBallsCollision(b1, b2);
 			
 			//проверяем, если время до столкновения меньше текущего, то обновляем.
-			if (timeToNextColl < float.MaxValue && timeToNextColl <= collisions.TimeToCollision) 
+			if (timeToNextColl < Fixed64.MaxValue && timeToNextColl <= collisions.TimeToCollision) 
 			{
 				collisions.Add2BallsCollision(b1, b2, timeToNextColl);
 			}
@@ -367,8 +370,8 @@ namespace Kborod.BilliardCore
 		private MyVector v3;
 		private ProjectResult vp;
 		private MyVector vn = new MyVector();
-		private float diff;
-		private float moveBack;
+		private Fixed64 diff;
+		private Fixed64 moveBack;
 		private MyVector v4 = new MyVector();
 		
 		/**
@@ -377,7 +380,7 @@ namespace Kborod.BilliardCore
 		 * @param	b2
 		 * @return
 		 */
-		private float getTimeToNextBallsCollision(Ball b1, Ball b2)
+		private Fixed64 getTimeToNextBallsCollision(Ball b1, Ball b2)
 		{
 			v1 = b1.v; 	//TODO можно будет сразу на входе в параметрах принимать вектора, а не шары.
 			v2 = b2.v;
@@ -393,7 +396,7 @@ namespace Kborod.BilliardCore
 			var pen = Config.BALL_DIAM_PX  - vc.len;
 			
 			//check if balls collide at start
-			if (pen >= 0.001)
+			if (pen >= Fixed64.FromDouble(0.001))
 			{
 				ToLog(/*GameTime.getInstance().getServerTime() + " " + */ currDt + " ERROR getTimeToNextBallsCollision: collide at start. b1:" + b1.Number + " b2:" + b2.Number + " pen:" + pen); 
 			}
@@ -418,11 +421,11 @@ namespace Kborod.BilliardCore
 			//check if vn is shorter then combined radiuses
 			diff = ( Config.BALL_DIAM_PX ) - vn.len;
 			
-			if (diff > 0 && (v3.vx * vp.vx + v3.vy * vp.vy) >= 0)
+			if (diff > Fixed64.Zero && (v3.vx * vp.vx + v3.vy * vp.vy) >= Fixed64.Zero)
 			{
 				//collision
 				//amount to move back moving ball
-				moveBack = MathF.Sqrt(Config.BALL_DIAM_PX_SQUARED - vn.len * vn.len);
+				moveBack = Fixed64.Sqrt(Config.BALL_DIAM_PX_SQUARED - vn.len * vn.len);
 				
 				//vector from ball1 starting point to its coordinates when collision happens
 				v4.p0 = v1.p0;
@@ -432,7 +435,7 @@ namespace Kborod.BilliardCore
 				
 				return (v4.len / v3.len) * Config.SPEED_UPDATE_DELTA;
 			}
-			return float.MaxValue;
+			return Fixed64.MaxValue;
 		}
 		
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -456,7 +459,7 @@ namespace Kborod.BilliardCore
 				var timeToNextColl = getTimeToBallWithWallCollision(b, walls[i]);
 			
 				//проверяем, если время до столкновения меньше текущего, то обновляем.
-				if (timeToNextColl < float.MaxValue && timeToNextColl <= collisions.TimeToCollision) 
+				if (timeToNextColl < Fixed64.MaxValue && timeToNextColl <= collisions.TimeToCollision) 
 				{ 
 					collisions.AddBallWithWallCollision(b, walls[i], timeToNextColl);
 				}
@@ -465,13 +468,13 @@ namespace Kborod.BilliardCore
 		
 		
 		
-		private float getTimeToBallWithWallCollision(Ball b, MyVector w, bool isAim = false)
+		private Fixed64 getTimeToBallWithWallCollision(Ball b, MyVector w, bool isAim = false)
 		{
             BallWallIntersectResult ir = getBallWallIntersectionInfo(b.v.p0.x, b.v.p0.y, b.v.p1.x, b.v.p1.y, w.p0.x, w.p0.y, w.p1.x, w.p1.y);
 			
 			if (ir.IsIntersect == false || !ir.IsNeedProcessCollision)
 			{
-				return float.MaxValue;
+				return Fixed64.MaxValue;
 			}
 			else
 			{
@@ -485,15 +488,15 @@ namespace Kborod.BilliardCore
 		
 		private BallWallIntersectResult ballWallIntersectResult = new BallWallIntersectResult();
 
-		private BallWallIntersectResult getBallWallIntersectionInfo(float ballX1, float ballY1, float ballX2, float ballY2, 
-			float wallX1, float wallY1, float walllX2, float wallY2)
+		private BallWallIntersectResult getBallWallIntersectionInfo(Fixed64 ballX1, Fixed64 ballY1, Fixed64 ballX2, Fixed64 ballY2,
+            Fixed64 wallX1, Fixed64 wallY1, Fixed64 walllX2, Fixed64 wallY2)
 		{
 			ballWallIntersectResult.clear();
 			
 			var denumenator = (wallY2 - wallY1) * ( ballX2 - ballX1) - (walllX2 - wallX1) * (ballY2 - ballY1);
 			
 			//если прямые не параллельны:
-			if (denumenator != 0)
+			if (denumenator != Fixed64.Zero)
 			{
 				ballWallIntersectResult.u1 = (((walllX2 - wallX1) * (ballY1 - wallY1)) - ((wallY2 - wallY1) * (ballX1 - wallX1))) / denumenator;
 				ballWallIntersectResult.u2 = (((ballX2 - ballX1) * (ballY1 - wallY1)) - ((ballY2 - ballY1) * (ballX1 - wallX1))) / denumenator;
@@ -528,7 +531,7 @@ namespace Kborod.BilliardCore
 				var timeToNextColl = getTimeToNextBallAngleCollision(b, angles[i]);
 			
 				//проверяем, если время до столкновения меньше текущего, то обновляем.
-				if (timeToNextColl < float.MaxValue && timeToNextColl <= collisions.TimeToCollision) 
+				if (timeToNextColl < Fixed64.MaxValue && timeToNextColl <= collisions.TimeToCollision) 
 				{
 					collisions.AddBallWithAngleCollision(b, angles[i], timeToNextColl);
 				}
@@ -542,7 +545,7 @@ namespace Kborod.BilliardCore
 		 * @param	b2
 		 * @return
 		 */
-		private float getTimeToNextBallAngleCollision(Ball b, Angle a)
+		private Fixed64 getTimeToNextBallAngleCollision(Ball b, Angle a)
 		{
 			v1 = b.v; 	//TODO можно будет сразу на входе в параметрах принимать вектора, а не шары.
 			v1.makeVector();
@@ -559,7 +562,7 @@ namespace Kborod.BilliardCore
 			var pen = Config.BALL_RAD_PX - vc.len;
 			
 			//check if balls collide at start
-			if (pen >= 0.001)
+			if (pen >= Fixed64.FromDouble(0.001))
 			{
 				ToLog(/*GameTime.getInstance().getServerTime() + " " + int(currDt) + */" ERROR getTimeToNextBallAngleCollision: collide at start. b:" + b.Number + " a:" + a.x + "," + a.y + " pen:" + pen); 
 			}
@@ -577,11 +580,11 @@ namespace Kborod.BilliardCore
 			//check if vn is shorter then combined radiuses
 			diff = ( Config.BALL_RAD_PX ) - vn.len;
 			
-			if (diff >= 0 && (v1.vx * vp.vx + v1.vy * vp.vy) >= 0)
+			if (diff >= Fixed64.Zero && (v1.vx * vp.vx + v1.vy * vp.vy) >= Fixed64.Zero)
 			{
 				//collision
 				//amount to move back moving ball
-				moveBack = MathF.Sqrt(Config.BALL_RAD_PX_SQUARED - vn.len * vn.len);
+				moveBack = Fixed64.Sqrt(Config.BALL_RAD_PX_SQUARED - vn.len * vn.len);
 				
 				//vector from ball1 starting point to its coordinates when collision happens
 				v4.p0 = v1.p0;
@@ -599,7 +602,7 @@ namespace Kborod.BilliardCore
 				trace ("getTimeToNextBallAngleCollision: p1:" + v111.p1)*/
 				return (v4.len / v1.len) * Config.SPEED_UPDATE_DELTA;
 			}
-			return float.MaxValue;
+			return Fixed64.MaxValue;
 		}
 
 
@@ -622,7 +625,7 @@ namespace Kborod.BilliardCore
 				var timeToNextColl = getTimeToNextBallPocketCollision(b, pockets[i]);
 			
 				//проверяем, если время до столкновения меньше текущего, то обновляем.
-				if (timeToNextColl < float.MaxValue && timeToNextColl <= collisions.TimeToCollision) 
+				if (timeToNextColl < Fixed64.MaxValue && timeToNextColl <= collisions.TimeToCollision) 
 				{
 					collisions.AddBallWithPocketCollision(b, pockets[i], timeToNextColl);
 				}
@@ -636,7 +639,7 @@ namespace Kborod.BilliardCore
 		 * @param	p
 		 * @return
 		 */
-		private float getTimeToNextBallPocketCollision(Ball b, Pocket p)
+		private Fixed64 getTimeToNextBallPocketCollision(Ball b, Pocket p)
 		{
 			v1 = b.v; 	//TODO можно будет сразу на входе в параметрах принимать вектора, а не шары.
 			
@@ -652,7 +655,7 @@ namespace Kborod.BilliardCore
 			var pen = Config.POCKET_RAD_PX - vc.len;
 			
 			//check if balls collide at start
-			if (pen >= 0.001)
+			if (pen >= Fixed64.FromDouble(0.001))
 			{
 				ToLog(/*GameTime.getInstance().getServerTime() + " " + int(currDt) + */" ERROR getTimeToNextBallPocketCollision: collide at start. b:" + b.Number + " p:" + p.x + "," + p.y + " pen:" + pen); 
 			}
@@ -670,11 +673,11 @@ namespace Kborod.BilliardCore
 			//check if vn is shorter then combined radiuses
 			diff = ( Config.POCKET_RAD_PX ) - vn.len;
 			
-			if (diff >= 0 && (v1.vx * vp.vx + v1.vy * vp.vy) >= 0)
+			if (diff >= Fixed64.Zero && (v1.vx * vp.vx + v1.vy * vp.vy) >= Fixed64.Zero)
 			{
 				//collision
 				//amount to move back moving ball
-				moveBack = MathF.Sqrt(Config.POCKET_RAD_PX_SQUARED - vn.len * vn.len);
+				moveBack = Fixed64.Sqrt(Config.POCKET_RAD_PX_SQUARED - vn.len * vn.len);
 				
 				//vector from ball1 starting point to its coordinates when collision happens
 				v4.p0 = v1.p0;
@@ -692,7 +695,7 @@ namespace Kborod.BilliardCore
 				trace ("getTimeToNextBallAngleCollision: p1:" + v111.p1)*/
 				return (v4.len / v1.len) * Config.SPEED_UPDATE_DELTA;
 			}	
-			return float.MaxValue;
+			return Fixed64.MaxValue;
 		}
 
 
@@ -758,7 +761,7 @@ namespace Kborod.BilliardCore
 			var pen = Config.BALL_DIAM_PX - vc.len;
 			
 			//check if balls are not collide at start
-			if (pen < -0.01)
+			if (pen < Fixed64.FromDouble(-0.01))
 			{
 				ToLog("ERROR applyCollisionToBalls: balls are not collide. vc.len:" + vc.len);
 			}
@@ -785,7 +788,7 @@ namespace Kborod.BilliardCore
 		
 		
 		
-		private float cos;
+		private Fixed64 cos;
 		/**
 		 * Посчитать столкновение и обновить векторы после столкновения. b1 - активный шар (движется), b2 - шар в состоянии покоя
 		 * @param	шар
@@ -810,18 +813,18 @@ namespace Kborod.BilliardCore
 				//trace ("BW Collision before Applied:" + " bP0X:" + b.v.p0.x + " bP0Y:" + b.v.p0.y + " bP1X" + b.v.p1.x + " bP1Y" + b.v.p1.y);
 				
 				//косинус угла между вектором поступательного движения и стеной (чем перпендикулярнее, тем ближе к 0)
-				cos = MathF.Abs(MyVector.getDotP(w, b.v) / ( w.len * b.v.len));
+				cos = Fixed64.Abs(MyVector.getDotP(w, b.v) / ( w.len * b.v.len));
 				//trace ("cos = " + String(MyVector.getDotP(w, b.v) / ( w.len * b.v.len)));
 				newv1Ball = MyVector.bounceBallFromWall(b.v, w);
-				b.v.vx = newv1Ball.vx * (Config.WALL_ELASTIC + (1 - Config.WALL_ELASTIC) * cos);
-				b.v.vy = newv1Ball.vy * (Config.WALL_ELASTIC + (1 - Config.WALL_ELASTIC) * cos);
+				b.v.vx = newv1Ball.vx * (Config.WALL_ELASTIC + (Fixed64.One - Config.WALL_ELASTIC) * cos);
+				b.v.vy = newv1Ball.vy * (Config.WALL_ELASTIC + (Fixed64.One - Config.WALL_ELASTIC) * cos);
 				b.v.p0.x = ir.x;	//чтобы избавиться от погрешностей
 				b.v.p0.y = ir.y;
 				
-				if (b.SideSpin != 0)
+				if (b.SideSpin != Fixed64.Zero)
 				{
-					b.v.vx += w.dx * b.SideSpin * (1 - cos);
-					b.v.vy += w.dy * b.SideSpin * (1 - cos);
+					b.v.vx += w.dx * b.SideSpin * (Fixed64.One - cos);
+					b.v.vy += w.dy * b.SideSpin * (Fixed64.One - cos);
 				}
 				b.SideSpin *= cos;
 				
@@ -830,13 +833,13 @@ namespace Kborod.BilliardCore
 				
 				//Если имеется вертикальное вращение, то правим его в зависимости от угла между вектором вращения и стеной 
 				//(чем ближе к 90 градусам, тем более сильно гасится вращение)
-				if (b.vVertSpin.len > 1)
+				if (b.vVertSpin.len > Fixed64.One)
 				{
 					//косинус угла между вектором вертикального вращения и стеной
-					cos = MathF.Abs(MyVector.getDotP(w, b.vVertSpin) / ( w.len * b.vVertSpin.len));
+					cos = Fixed64.Abs(MyVector.getDotP(w, b.vVertSpin) / ( w.len * b.vVertSpin.len));
 					//trace ("cos = " + cos);
-					b.vVertSpin.vx *= (0.2f + 0.8f * cos) * Config.VERTICAL_ROTATION_WALL_ABSORB;
-					b.vVertSpin.vy *= (0.2f + 0.8f * cos) * Config.VERTICAL_ROTATION_WALL_ABSORB;
+					b.vVertSpin.vx *= (Fixed64.FromDouble(0.2) + Fixed64.FromDouble(0.8) * cos) * Config.VERTICAL_ROTATION_WALL_ABSORB;
+					b.vVertSpin.vy *= (Fixed64.FromDouble(0.2) + Fixed64.FromDouble(0.8) * cos) * Config.VERTICAL_ROTATION_WALL_ABSORB;
 					b.vVertSpin.makeVector();
 				}
 
@@ -874,7 +877,7 @@ namespace Kborod.BilliardCore
 			
 			//check if balls are not collide at start
 			ToLog("BALL_ANGLE:" + pen);
-			if (pen < -0.01)
+			if (pen < Fixed64.FromDouble(-0.01))
 			{
 				ToLog("ERROR applyBallAngleCollision: ball with angle are not collide. vc.len:" + vc.len);
 			}
@@ -887,12 +890,12 @@ namespace Kborod.BilliardCore
 				vOrt.updatePointsFromComponents();
 				vOrt.makeVector();
 				//косинус угла между вектором поступательного движения и касательной к углу
-				cos = MathF.Abs(MyVector.getDotP(vOrt, b.v) / ( vOrt.len * b.v.len));
+				cos = Fixed64.Abs(MyVector.getDotP(vOrt, b.v) / ( vOrt.len * b.v.len));
 				//trace ("ASDASD" + String(Config.WALL_ELASTIC + (1 - Config.WALL_ELASTIC) * cos));
 				newv1Ball = MyVector.bounceBallFromAngle(b.v, vc);
 				
-				b.v.vx = newv1Ball.vx * (Config.WALL_ELASTIC + (1 - Config.WALL_ELASTIC) * cos);
-				b.v.vy = newv1Ball.vy * (Config.WALL_ELASTIC + (1 - Config.WALL_ELASTIC) * cos);
+				b.v.vx = newv1Ball.vx * (Config.WALL_ELASTIC + (Fixed64.One - Config.WALL_ELASTIC) * cos);
+				b.v.vy = newv1Ball.vy * (Config.WALL_ELASTIC + (Fixed64.One - Config.WALL_ELASTIC) * cos);
 				//b.v.p0.x = ir.x;	//чтобы избавиться от погрешностей
 				//b.v.p0.y = ir.y;
 				b.v.updatePointsFromComponents();
@@ -900,13 +903,13 @@ namespace Kborod.BilliardCore
 				
 				//Если имеется вертикальное вращение, то правим его в зависимости от угла между вектором вращения и касательной в точку касания
 				//(чем ближе к 90 градусам, тем более сильно гасится вращение)
-				if (b.vVertSpin.len > 1)
+				if (b.vVertSpin.len > Fixed64.One)
 				{
 					//косинус угла между вектором движения и касательной к углу
-					cos = MathF.Abs(MyVector.getDotP(vOrt, b.vVertSpin) / ( vOrt.len * b.vVertSpin.len));
+					cos = Fixed64.Abs(MyVector.getDotP(vOrt, b.vVertSpin) / ( vOrt.len * b.vVertSpin.len));
 					ToLog("cosVA = "  + cos);
-					b.vVertSpin.vx *= (0.2f + 0.8f * cos) * Config.VERTICAL_ROTATION_WALL_ABSORB;
-					b.vVertSpin.vy *= (0.2f + 0.8f * cos) * Config.VERTICAL_ROTATION_WALL_ABSORB;
+					b.vVertSpin.vx *= (Fixed64.FromDouble(0.2) + Fixed64.FromDouble(0.8) * cos) * Config.VERTICAL_ROTATION_WALL_ABSORB;
+					b.vVertSpin.vy *= (Fixed64.FromDouble(0.2) + Fixed64.FromDouble(0.8) * cos) * Config.VERTICAL_ROTATION_WALL_ABSORB;
 					b.vVertSpin.makeVector();
 				}
 
@@ -941,7 +944,7 @@ namespace Kborod.BilliardCore
 			
 			//check if balls are not collide at start
 			ToLog("BALL_POCKET:" + pen);
-			if (pen < -0.01)
+			if (pen < Fixed64.FromDouble(-0.01))
 			{
 				ToLog("ERROR applyBallPocketCollision: ball with pocket are not collide. vc.len:" + vc.len);
 			}
@@ -990,11 +993,11 @@ namespace Kborod.BilliardCore
 				}
 				else if (b.IsSleep)
 				{
-					if (b.v.len > 0) addActiveBall(b);
+					if (b.v.len > Fixed64.Zero) addActiveBall(b);
 				}
 				else 
 				{
-					if (b.v.len == 0) removeActiveBall(b);
+					if (b.v.len == Fixed64.Zero) removeActiveBall(b);
 				}
 				
 				b.NeedUpdateState = false;
@@ -1043,10 +1046,10 @@ namespace Kborod.BilliardCore
 		 */
 		private void resetShotParams()
 		{
-			currShotDuration = 0;
-			timeToVelUpdate = 0;
+			currShotDuration = Fixed64.Zero;
+			timeToVelUpdate = Fixed64.Zero;
 			updateNextTimeToVelUpdate();
-			lastDt = 0;
+			lastDt = Fixed64.Zero;
 			
 			ToLog("SHOT RESETED.");
 		}
@@ -1080,7 +1083,7 @@ namespace Kborod.BilliardCore
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		
 
-		private float aimTimeToColl = float.MaxValue;
+		private Fixed64 aimTimeToColl = Fixed64.MaxValue;
 		private Ball aimCollBall = null;
 		private MyVector aimCollWall = null;
 		private Angle aimCollAngle = null;
@@ -1096,12 +1099,12 @@ namespace Kborod.BilliardCore
 		{
 			aimObjectResult.AimBallX0 = b.v.p0.x;
 			aimObjectResult.AimBallY0 = b.v.p0.y;
-			aimTimeToColl = float.MaxValue;
+			aimTimeToColl = Fixed64.MaxValue;
 			/*trace ("-------getAimObj--------");
 			trace ("bp0x:" + b.v.p0.x + " bp0y:" + b.v.p0.y );
 			trace ("bp1x:" + b.v.p1.x + " bp1y:" + b.v.p1.y );*/
 			
-			float aimTimeToCollTmp;
+			Fixed64 aimTimeToCollTmp;
 			
 			for (var i = 0; i < Balls.Count; i++) 
 			{
@@ -1120,18 +1123,18 @@ namespace Kborod.BilliardCore
 			}
 			
 			//trace ("aimTimeToCol1l: " + aimTimeToColl);
-			var vectorProduct = 0f;
+			var vectorProduct = Fixed64.Zero;
 			for (var i = 0; i < walls.Count; i++)
 			{
 				aimTimeToCollTmp = getTimeToBallWithWallCollision(b, walls[i], true);
 				if (aimTimeToColl > aimTimeToCollTmp)
 				{
-					if (aimTimeToCollTmp == 0)
+					if (aimTimeToCollTmp == Fixed64.Zero)
 					{
 						//если P2 шара слева от вектора стены (векторное произведение < 0), значит надо обрабатывать коллизию, иначе коллизия уже обработана и шар уже движется в направлении от стены
 						vectorProduct = ((b.v.p1.x - b.v.p0.x) * (walls[i].p1.y - walls[i].p0.y) - (b.v.p1.y - b.v.p0.y) * (walls[i].p1.x - walls[i].p0.x));
 					}
-					if (aimTimeToCollTmp != 0 || vectorProduct > 0 )
+					if (aimTimeToCollTmp != Fixed64.Zero || vectorProduct > Fixed64.Zero)
 					{
 						aimTimeToColl = aimTimeToCollTmp;
 						aimCollWall = walls[i];
@@ -1140,7 +1143,7 @@ namespace Kborod.BilliardCore
 						aimCollPocket = null;
 					}
 				}
-				vectorProduct = 0;
+				vectorProduct = Fixed64.Zero;
 			}
 			//trace ("aimTimeToCol1l: " + aimTimeToColl);
 			
@@ -1212,34 +1215,7 @@ namespace Kborod.BilliardCore
 			//trace ("AIMRESULT: " + aimObjectResult.aimBallX + " " + aimObjectResult.aimBallY);
 			return aimObjectResult;
 		}
-		
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////	
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//////////-----------------------------------ПОЗИЦИИ ШАРОВ-------------------------------------------///////////
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		
-		/**
-		 * Координата Х шара
-		 * @param	bNum
-		 * @return
-		 */
-		public float getBallX(int bNum = 0)
-		{
-			if (Balls[bNum] == null) { ToLog("ERROR:GameCore.getBallX() balls[bNum] == null, bnum:" + bNum); return 0; }
-			return Balls[bNum].v.p0.x;
-		}
-		/**
-		 * Координата Y шара
-		 * @param	bNum
-		 * @return
-		 */
-		public float getBallY(int bNum = 0)
-		{
-			if (Balls[bNum] == null) { ToLog("ERROR:GameCore.getBallY() balls[bNum] == null, bnum:" + bNum); return 0; }
-			return Balls[bNum].v.p0.y;
-		}
 		
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////	
@@ -1315,7 +1291,7 @@ namespace Kborod.BilliardCore
 			var denumenator = (v2.p1.y - v2.p0.y) * ( v1.p1.x - v1.p0.x) - (v2.p1.x - v2.p0.x) * (v1.p1.y - v1.p0.y);
 			
 			//если прямые параллельны:
-			if (denumenator == 0)
+			if (denumenator == Fixed64.Zero)
 			{
 				return;
 			}
@@ -1324,7 +1300,7 @@ namespace Kborod.BilliardCore
 				var u1 = (((v2.p1.x - v2.p0.x) * (v1.p0.y - v2.p0.y)) - ((v2.p1.y - v2.p0.y) * (v1.p0.x - v2.p0.x))) / denumenator;
 				var u2 = (((v1.p1.x - v1.p0.x) * (v1.p0.y - v2.p0.y)) - ((v1.p1.y - v1.p0.y) * (v1.p0.x - v2.p0.x))) / denumenator;
 				
-				if (u1 <= 0 || u1 == 1 || u2 >= 1)
+				if (u1 <= Fixed64.Zero || u1 == Fixed64.One || u2 >= Fixed64.One)
 				{
 					ToLog("Walls cutIntersections ERROR: u1:" + u1 + " u2:" + u2); 
 					return;
@@ -1333,14 +1309,14 @@ namespace Kborod.BilliardCore
 				{
 					var intX = v1.p0.x + u1 * (v1.p1.x - v1.p0.x);
 					var intY = v1.p0.y + u1 * (v1.p1.y - v1.p0.y);
-					if (u1 > 0 && u1 < 1)
+					if (u1 > Fixed64.Zero && u1 < Fixed64.One)
 					{
 						v1.p1.x = intX;
 						v1.p1.y = intY;
 						v1.updateComponentsFromPoints();
 						v1.makeVector();
 					}
-					if (u2 > 0 && u2 < 1)
+					if (u2 > Fixed64.Zero && u2 < Fixed64.One)
 					{
 						v2.p0.x = intX;
 						v2.p0.y = intY;
@@ -1374,7 +1350,7 @@ namespace Kborod.BilliardCore
 			var vectorProduct = ((v1.p1.x - v1.p0.x) * (v2.p1.y - v2.p0.y) - (v1.p1.y - v1.p0.y) * (v2.p1.x - v2.p0.x));
 			//trace ("vectorProduct:" + vectorProduct);
 			
-			if (vectorProduct < 0) 
+			if (vectorProduct < Fixed64.Zero) 
 				angles.Add(new Angle(v1.p1.x, v1.p1.y, Config.BALL_RAD_PX));
 		}
 		
@@ -1391,25 +1367,6 @@ namespace Kborod.BilliardCore
 			}
 		}
 
-
-        ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        ////////////////////////////////////////////////////////////////////////////////////////////////////////////////		
-
-
-        private void RoundBallsCoord()
-        {
-            for (var i = 0; i < Balls.Count; i++)
-            {
-                (Balls[i] as Ball).v.p0.x = (Balls[i] as Ball).v.p1.x = RoundDeterministic((Balls[i] as Ball).v.p0.x, 1);
-                (Balls[i] as Ball).v.p0.y = (Balls[i] as Ball).v.p1.y = RoundDeterministic((Balls[i] as Ball).v.p0.y, 1);
-            }
-        }
-
-        public float RoundDeterministic(float value, int digits)
-        {
-            return (float)Math.Round((double)value, digits, MidpointRounding.AwayFromZero);
-        }
-
         /////////////////////ДЛЯ ТЕСТОВ:////////////////////
         private void ToLog(string s)
 		{
@@ -1424,41 +1381,62 @@ namespace Kborod.BilliardCore
 
         private List<Point[]> wallsCoord = new List<Point[]>()
 		{
-			{new Point[]{new Point(-285f, -155f), new Point(-23f, -155f)}},
-			{new Point[]{new Point(-23f, -155f), new Point(-13f, -195f)}},
-			{new Point[]{new Point(-13f, -195f), new Point(13f, -195f)}},
-			{new Point[]{new Point(13f, -195f), new Point(23f, -155f)}},
-			{new Point[]{new Point(23f, -155f), new Point(285f, -155f)}},
-			{new Point[]{new Point(285f, -155f), new Point(310f, -180f)}},
-			{new Point[]{new Point(310f, -180f), new Point(335f, -155f)}},
-			{new Point[]{new Point(335f, -155f), new Point(310f, -130f)}},
-			{new Point[]{new Point(310f, -130f), new Point(310f, 130f)}},
-			{new Point[]{new Point(310f, 130f), new Point(335f, 155f)}},
-			{new Point[]{new Point(335f, 155f), new Point(310f, 180f)}},
-			{new Point[]{new Point(310f, 180f), new Point(285f, 155f)}},
-			{new Point[]{new Point(285f, 155f), new Point(23f, 155f)}},
-			{new Point[]{new Point(23f, 155f), new Point(13f, 195f)}},
-			{new Point[]{new Point(13f, 195f), new Point(-13f, 195f)}},
-			{new Point[]{new Point(-13f, 195f), new Point(-23f, 155f)}},
-			{new Point[]{new Point(-23f, 155f), new Point(-285f, 155f)}},
-			{new Point[]{new Point(-285f, 155f), new Point(-310f, 180f)}},
-			{new Point[]{new Point(-310f, 180f), new Point(-335f, 155f)}},
-			{new Point[]{new Point(-335f, 155f), new Point(-310f, 130f)}},
-			{new Point[]{new Point(-310f, 130f), new Point(-310f, -130f)}},
-			{new Point[]{new Point(-310f, -130f), new Point(-335f, -155f)}},
-			{new Point[]{new Point(-335f, -155f), new Point(-310f, -180f)}},
-			{new Point[]{new Point(-310f, -180f), new Point(-285f, -155f)}},
+			{new Point[]{new Point(-285d.ToFixed64(), -155d.ToFixed64()), new Point(-23d.ToFixed64(), -155d.ToFixed64())}},
+			{new Point[]{new Point(-23d.ToFixed64(), -155d.ToFixed64()), new Point(-13d.ToFixed64(), -195d.ToFixed64())}},
+			{new Point[]{new Point(-13d.ToFixed64(), -195d.ToFixed64()), new Point(13d.ToFixed64(), -195d.ToFixed64())}},
+			{new Point[]{new Point(13d.ToFixed64(), -195d.ToFixed64()), new Point(23d.ToFixed64(), -155d.ToFixed64())}},
+			{new Point[]{new Point(23d.ToFixed64(), -155d.ToFixed64()), new Point(285d.ToFixed64(), -155d.ToFixed64())}},
+			{new Point[]{new Point(285d.ToFixed64(), -155d.ToFixed64()), new Point(310d.ToFixed64(), -180d.ToFixed64())}},
+			{new Point[]{new Point(310d.ToFixed64(), -180d.ToFixed64()), new Point(335d.ToFixed64(), -155d.ToFixed64())}},
+			{new Point[]{new Point(335d.ToFixed64(), -155d.ToFixed64()), new Point(310d.ToFixed64(), -130d.ToFixed64())}},
+			{new Point[]{new Point(310d.ToFixed64(), -130d.ToFixed64()), new Point(310d.ToFixed64(), 130d.ToFixed64())}},
+			{new Point[]{new Point(310d.ToFixed64(), 130d.ToFixed64()), new Point(335d.ToFixed64(), 155d.ToFixed64())}},
+			{new Point[]{new Point(335d.ToFixed64(), 155d.ToFixed64()), new Point(310d.ToFixed64(), 180d.ToFixed64())}},
+			{new Point[]{new Point(310d.ToFixed64(), 180d.ToFixed64()), new Point(285d.ToFixed64(), 155d.ToFixed64())}},
+			{new Point[]{new Point(285d.ToFixed64(), 155d.ToFixed64()), new Point(23d.ToFixed64(), 155d.ToFixed64())}},
+			{new Point[]{new Point(23d.ToFixed64(), 155d.ToFixed64()), new Point(13d.ToFixed64(), 195d.ToFixed64())}},
+			{new Point[]{new Point(13d.ToFixed64(), 195d.ToFixed64()), new Point(-13d.ToFixed64(), 195d.ToFixed64())}},
+			{new Point[]{new Point(-13d.ToFixed64(), 195d.ToFixed64()), new Point(-23d.ToFixed64(), 155d.ToFixed64())}},
+			{new Point[]{new Point(-23d.ToFixed64(), 155d.ToFixed64()), new Point(-285d.ToFixed64(), 155d.ToFixed64())}},
+			{new Point[]{new Point(-285d.ToFixed64(), 155d.ToFixed64()), new Point(-310d.ToFixed64(), 180d.ToFixed64())}},
+			{new Point[]{new Point(-310d.ToFixed64(), 180d.ToFixed64()), new Point(-335d.ToFixed64(), 155d.ToFixed64())}},
+			{new Point[]{new Point(-335d.ToFixed64(), 155d.ToFixed64()), new Point(-310d.ToFixed64(), 130d.ToFixed64())}},
+			{new Point[]{new Point(-310d.ToFixed64(), 130d.ToFixed64()), new Point(-310d.ToFixed64(), -130d.ToFixed64())}},
+			{new Point[]{new Point(-310d.ToFixed64(), -130d.ToFixed64()), new Point(-335d.ToFixed64(), -155d.ToFixed64())}},
+			{new Point[]{new Point(-335d.ToFixed64(), -155d.ToFixed64()), new Point(-310d.ToFixed64(), -180d.ToFixed64())}},
+			{new Point[]{new Point(-310d.ToFixed64(), -180d.ToFixed64()), new Point(-285d.ToFixed64(), -155d.ToFixed64())}},
 
         };
 		private List<Point[]> pocketsCoords = new List<Point[]>()
 		{
-            {new Point[]{new Point(-317.5f,-162.5f), new Point(1f,1f)}},
-			{new Point[]{new Point(0f,-175f), new Point(0f,1f)}},
-			{new Point[]{new Point(317.5f,-162.5f), new Point(-1f,1f)}},
-			{new Point[]{new Point(317.5f,162.5f), new Point(-1f,-1f)}},
-			{new Point[]{new Point(0f,175f), new Point(0f,-1f)}},
-			{new Point[]{new Point(-317.5f,162.5f), new Point(1f,-1f)}},
+            {new Point[]{new Point(-317.5d.ToFixed64(),-162.5d.ToFixed64()), new Point(1d.ToFixed64(),1d.ToFixed64())}},
+			{new Point[]{new Point(0d.ToFixed64(),-175d.ToFixed64()), new Point(0d.ToFixed64(),1d.ToFixed64())}},
+			{new Point[]{new Point(317.5d.ToFixed64(),-162.5d.ToFixed64()), new Point(-1d.ToFixed64(),1d.ToFixed64())}},
+			{new Point[]{new Point(317.5d.ToFixed64(),162.5d.ToFixed64()), new Point(-1d.ToFixed64(),-1d.ToFixed64())}},
+			{new Point[]{new Point(0d.ToFixed64(),175d.ToFixed64()), new Point(0d.ToFixed64(),-1d.ToFixed64())}},
+			{new Point[]{new Point(-317.5d.ToFixed64(),162.5d.ToFixed64()), new Point(1d.ToFixed64(),-1d.ToFixed64())}},
         };
 
+
+
+
+
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////////		
+
+
+        //private void RoundBallsCoord()
+        //{
+        //    for (var i = 0; i < Balls.Count; i++)
+        //    {
+        //        (Balls[i] as Ball).v.p0.x = (Balls[i] as Ball).v.p1.x = RoundDeterministic((Balls[i] as Ball).v.p0.x, 1);
+        //        (Balls[i] as Ball).v.p0.y = (Balls[i] as Ball).v.p1.y = RoundDeterministic((Balls[i] as Ball).v.p0.y, 1);
+        //    }
+        //}
+
+        //public float RoundDeterministic(float value, int digits)
+        //{
+        //    return (float)Math.Round((double)value, digits, MidpointRounding.AwayFromZero);
+        //}
     }
 }

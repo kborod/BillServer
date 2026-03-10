@@ -11,39 +11,39 @@ namespace Kborod.BilliardCore
         public Point p1;
 
         //компонента x вектора
-        public float vx;
+        public Fixed64 vx;
 
         //компонента y вектора
-        public float vy;
+        public Fixed64 vy;
 
         //компонента x единичного вектора
-        public float dx;
+        public Fixed64 dx;
 
         //компонента y единичного вектора
-        public float dy;
+        public Fixed64 dy;
 
 
         //x правая нормаль 
-        public float rx;
+        public Fixed64 rx;
         //y правая нормаль
-        public float ry;
+        public Fixed64 ry;
 
         //x левая нормаль 
-        public float lx = 0;
+        public Fixed64 lx = Fixed64.Zero;
 		//y левая нормаль 
-		public float ly = 0;
+		public Fixed64 ly = Fixed64.Zero;
 
         //длина вектора
-        public float len;
+        public Fixed64 len;
 		
 
-        public void setP0(float p0X, float p0Y)
+        public void setP0(Fixed64 p0X, Fixed64 p0Y)
 		{
 			p0.x = p0X;
 			p0.y = p0Y;
 		}
 
-		public void setP1(float p1X, float p1Y)
+		public void setP1(Fixed64 p1X, Fixed64 p1Y)
 		{
 			p1.x = p1X;
 			p1.y = p1Y;
@@ -68,15 +68,15 @@ namespace Kborod.BilliardCore
 			//length of vector
 			updateLen();
 			//normalized unit-sized components
-			if (len > 0)
+			if (len > Fixed64.Zero)
 			{
 				dx = vx / len;
 				dy = vy / len;
 			}
 			else
 			{
-				dx = 0;
-				dy = 0;
+				dx = Fixed64.Zero;
+				dy = Fixed64.Zero;
 			}
 			//right hand normal
 			rx = -dy;
@@ -88,7 +88,7 @@ namespace Kborod.BilliardCore
 		
 		public void updateLen()
 		{
-			len = MathF.Sqrt(vx * vx + vy * vy);
+			len = Fixed64.Sqrt(vx * vx + vy * vy);
 		}
 
 		/*public void holdVector()
@@ -125,14 +125,14 @@ namespace Kborod.BilliardCore
 		///////////////////////*******   STATIC:   ******/////////////////////////////
 		
 		//скалярное произведение
-		public static float getDotP(MyVector v1, MyVector v2)
+		public static Fixed64 getDotP(MyVector v1, MyVector v2)
 		{
 			return v1.vx * v2.vx + v1.vy * v2.vy;
 		}
 		
 		
 		
-		private static float dp;
+		private static Fixed64 dp;
 		private static ProjectResult projRes;
 		/**
 		 * проекция вектора v1 на единичный вектор dx/dy
@@ -142,7 +142,7 @@ namespace Kborod.BilliardCore
 		 * @param	dy
 		 * @return
 		 */
-		public static ProjectResult projectVector(MyVector v1, float dx, float dy)
+		public static ProjectResult projectVector(MyVector v1, Fixed64 dx, Fixed64 dy)
 		{
 			//find dot product
 			dp = v1.vx*dx + v1.vy*dy;
@@ -150,7 +150,7 @@ namespace Kborod.BilliardCore
 			//projection components
 			projRes.vx = dp * dx;
 			projRes.vy = dp * dy;
-			projRes.len = MathF.Sqrt(projRes.vx * projRes.vx + projRes.vy * projRes.vy);
+			projRes.len = Fixed64.Sqrt(projRes.vx * projRes.vx + projRes.vy * projRes.vy);
 			return projRes;
 		}
 		
@@ -199,7 +199,7 @@ namespace Kborod.BilliardCore
 			//projection of v1 on v2 normal
 			proj12 = projectVector(v1, v2.lx, v2.ly);
 			//reverse projection on v2 normal
-			proj12.len = MathF.Sqrt(proj12.vx * proj12.vx + proj12.vy * proj12.vy);
+			proj12.len = Fixed64.Sqrt(proj12.vx * proj12.vx + proj12.vy * proj12.vy);
 			proj12.vx = v2.rx * proj12.len;
 			proj12.vy = v2.ry * proj12.len;
 			//add the projections
@@ -230,9 +230,9 @@ namespace Kborod.BilliardCore
 
 			//trace ("proj11:" + JSON.encode(proj11))
 			//trace ("proj12:" + JSON.encode(proj12))
-			proj12.len = MathF.Sqrt(proj12.vx * proj12.vx + proj12.vy * proj12.vy);
-			proj12.vx = -1 * vc.dx * proj12.len;
-			proj12.vy = -1 * vc.dy * proj12.len;
+			proj12.len = Fixed64.Sqrt(proj12.vx * proj12.vx + proj12.vy * proj12.vy);
+			proj12.vx = -Fixed64.One * vc.dx * proj12.len;
+			proj12.vy = -Fixed64.One * vc.dy * proj12.len;
 
 			//trace ("   proj12:" + vk.api.serialization.json.JSON.encode(proj12))
 			//add the projections

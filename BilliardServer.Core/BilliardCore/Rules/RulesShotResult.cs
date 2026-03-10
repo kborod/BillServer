@@ -35,7 +35,7 @@ namespace Kborod.BilliardCore.Rules
             string winUserIdOrNull)
         {
             Foul = foul;
-            BallDatas = ballDatas; ;
+            BallDatas = ballDatas;
             PocketedBalls = pocketedBalls;
             ReturnedPocketedBalls = returnedPocketedBalls;
             CurrTurnPlayerId = currTurnPlayerId;
@@ -65,7 +65,7 @@ namespace Kborod.BilliardCore.Rules
             {
                 var b2 = other.BallDatas[b1.Number];
 
-                if (b1.IsRemoved != b2.IsRemoved || (b1.IsRemoved == false && (b1.X != b2.X || b1.Y != b2.Y)))
+                if (b1.IsRemoved != b2.IsRemoved || (b1.IsRemoved == false && (b1.Xraw != b2.Xraw || b1.Yraw != b2.Yraw)))
                     result += $"{b1} - {b2}\n";
             }
 

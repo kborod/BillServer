@@ -4,7 +4,7 @@ namespace Kborod.BilliardCore
     {
 		public int Number { get; }
 		public bool IsRemoved { get; }
-        public float X { get; }
-        public float Y { get; }
+        public long Xraw { get; }
+        public long Yraw { get; }
     }
 }

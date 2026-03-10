@@ -2,8 +2,8 @@ namespace Kborod.BilliardCore
 {
     public class ProjectResult
     {
-        public float vx;
-		public float vy;
-		public float len;
+        public Fixed64 vx;
+		public Fixed64 vy;
+		public Fixed64 len;
     }
 }

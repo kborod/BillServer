@@ -34,13 +34,12 @@ namespace BilliardServer.Application.ShotCalculating
                     var calculator = _pool.Get();
                     try
                     {
-                        _logger.LogWarning($"ShotContext: {JsonSerializer.Serialize(poolContext)}");
                         var result = calculator.CalculateShot(poolContext);
                         _ = _mediator.Send(new CalculatedShotResultCommand(context.MatchId, result));
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogError(ex, "Calculate error. MatchId:{Id}", context.MatchId);
+                        _logger.LogError(ex, "Calculate error. Context:{context}", context);
                         _ = _mediator.Send(new CalculatedShotResultCommand(context.MatchId, null));
                     }
                     finally

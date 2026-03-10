@@ -37,7 +37,7 @@ namespace Kborod.BilliardCore
         /// <summary>
         /// Продолжительность удара
         /// </summary>
-        public float ShotDuration;
+        public double ShotDuration;
 		
 		public override string ToString()
 		{

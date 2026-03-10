@@ -18,14 +18,14 @@ namespace BilliardServer.Application.Matches.Match
             firstTurnSettings = PoolEightRules.GetFirstTurnSettings(BallDatas);
         }
 
-        public override ICalculateContext GetShotContext(AimInfo aimInfo, float cuePower)
+        public override ICalculateContext GetContextForCalculateShot(AimInfo aimInfo, int cuePower)
         {
             ChangeState(MatchState.WaitingTurnResults);
             return new CalculatePoolShotContext(Id, GameType, BallDatas, aimInfo, TurningPlayer,
                 GetPlayerBallType(TurningPlayer), GetOpponent(TurningPlayer), MatchShotsCount == 0, TurnSettings.MoveOnlyInKitchen, cuePower);
         }
 
-        protected override void ProcessTurnResult(ITurnResult turnResult)
+        public override void ProcessTurnResult(ITurnResult turnResult)
         {
             if ((turnResult is PoolEightTurnResults p8result) == false)
                 throw new Exception($"MatchPoolEight.ShotCompletedHandler turnResult type is {turnResult.GetType()}");

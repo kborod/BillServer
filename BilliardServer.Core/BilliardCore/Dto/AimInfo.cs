@@ -3,17 +3,17 @@
     public struct AimInfo
     {
         public int? CueBall { get; set; }
-        public float DirectionX { get; set; }
-        public float DirectionY { get; set; }
+        public long DirectionXraw { get; set; }
+        public long DirectionYraw { get; set; }
         public int? Pocket { get; set; }
 
-        public float? CueBallX { get; set; }
-        public float? CueBallY { get; set; }
+        public long? CueBallXraw { get; set; }
+        public long? CueBallYraw { get; set; }
 
-        public float SpinX { get; set; }
-        public float SpinY { get; set; }
+        public long SpinXraw { get; set; }
+        public long SpinYraw { get; set; }
 
-        public float Power { get; set; }
+        public long PowerRaw { get; set; }
 
         public int CueId { get; set; }
 

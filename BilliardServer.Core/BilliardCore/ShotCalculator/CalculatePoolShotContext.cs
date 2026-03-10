@@ -14,11 +14,11 @@ namespace Kborod.BilliardCore
         public string OppPlayerId { get; }
         public bool IsFirstSHot { get; }
         public bool OnlyKitchen { get; }
-        public float CuePower { get; }
+        public int CuePower { get; }
 
         public CalculatePoolShotContext(string matchId, GameType gameType, List<BallData> ballDatas, 
             AimInfo aimInfo, string turningPlayerId, PoolBallType turningPlayerBallType, string oppPlayerId, 
-            bool isFirstSHot, bool onlyKitchen, float cuePower)
+            bool isFirstSHot, bool onlyKitchen, int cuePower)
         {
             MatchId = matchId;
             GameType = gameType;

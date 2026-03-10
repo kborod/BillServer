@@ -67,5 +67,11 @@ namespace Kborod.BilliardCore
 
             return new PoolEightTurnResults(poolEightRulesResult, rulesResult, nextTurnSettings);
         }
+
+
+        public static Fixed64 ToFixed64(this double x)
+        {
+            return Fixed64.FromDouble(x);
+        }
     }
 }
