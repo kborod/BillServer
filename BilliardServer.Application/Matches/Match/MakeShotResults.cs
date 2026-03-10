@@ -9,6 +9,9 @@ namespace BilliardServer.Application.Matches.Match
         private RulesShotResult? Player1Result { get; set; }
         private RulesShotResult? Player2Result { get; set; }
 
+        public bool IsP1ResultReceived => Player1Result != null;
+        public bool IsP2ResultReceived => Player2Result != null;
+
         public ShotValidateResult LastValidateResult { get; private set; } = ShotValidateResult.None;
         public string DesyncLog { get; private set; } = string.Empty;
 

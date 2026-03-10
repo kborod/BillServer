@@ -1,6 +1,7 @@
 ﻿using BilliardServer.Application.Abstractions.AsyncMessaging;
 using BilliardServer.Application.Features.Matches;
 using BilliardServer.Application.Features.MatchMaking;
+using BilliardServer.Application.Features.Users;
 using BilliardServer.Core.Common;
 using BilliardServer.Core.Dto.Messaging.Responses.MatchMaking;
 using Kborod.BilliardCore.Enums;
@@ -36,15 +37,31 @@ namespace BilliardServer.Application.MatchMaking
             var waitingUsers = _queues.GetOrAdd((gameType, betType), _ => new ConcurrentDictionary<string, long>());
 
             string? opponentId = null;
-            while(waitingUsers.Count > 0)
+
+            if (waitingUsers.Count > 0)
             {
-                var pair = waitingUsers.MinBy(pair => pair.Value);
-                if (waitingUsers.TryRemove(pair))
+                var usersWithActiveConnection = await _mediator.Send(new GetUsersWithActiveConnectionCommand(waitingUsers.Keys));
+
+                while (usersWithActiveConnection.Count > 0)
                 {
-                    opponentId = pair.Key;
-                    break;
+                    var maxWaitingUser = usersWithActiveConnection.MinBy(u =>
+                    {
+                        if (waitingUsers.TryGetValue(u, out var enterQueueTime))
+                            return enterQueueTime;
+                        return long.MaxValue;
+                    });
+                    if (waitingUsers.TryRemove(maxWaitingUser!, out var _))
+                    {
+                        opponentId = maxWaitingUser;
+                        break;
+                    }
+                    else
+                    {
+                        usersWithActiveConnection.Remove(maxWaitingUser!);
+                    }
                 }
             }
+            
             if (opponentId != null)
             {
                 _users.TryRemove(opponentId, out var _);

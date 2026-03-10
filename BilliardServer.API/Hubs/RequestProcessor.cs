@@ -49,6 +49,12 @@ namespace BilliardServer.API.AsyncMessaging
                 var result = await mediator.Send(new UserShotResultCommand(dto.SynchronizationInfo, userId));
                 SendErrorIfNeed(result, responseSender);
             }
+            else if (requestEnvelope.RequestType == RequestType.LeaveMatch)
+            {
+                var dto = requestEnvelope.Payload.Deserialize<LeaveMatchDto>()!;
+                var result = await mediator.Send(new UserLeaveMatchCommand(dto.MatchId, userId));
+                SendErrorIfNeed(result, responseSender);
+            }
             else
             {
                 throw new InvalidOperationException($"Unsupported request type: {requestEnvelope.RequestType}");

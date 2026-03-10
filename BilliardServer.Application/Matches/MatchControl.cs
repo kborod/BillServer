@@ -1,4 +1,5 @@
 ﻿using BilliardServer.Application.Abstractions.AsyncMessaging;
+using BilliardServer.Application.Features.MatchMaking;
 using BilliardServer.Application.Features.MatchShotsCalculate;
 using BilliardServer.Application.Matches.Match;
 using BilliardServer.Core.Common;
@@ -64,13 +65,26 @@ namespace BilliardServer.Application.Matches
             if (timestamp < _match.StateEndTimestamp)
                 return;
 
+            if (_match.State == MatchState.Over)
+                return;
+
             if (_match.State == MatchState.WaitingPlayersInit)
             {
-                //TODO BORODIN добавить реализацию
+                if (_playersInitResults.Player1Inited == false && _playersInitResults.Player2Inited == false)
+                    MatchOver(null, 0, 0, true);
+                else
+                    MatchOver(_playersInitResults.Player1Inited ? _match.Player1 : _match.Player2, 3, 0);
             }
-            if (_match.State != MatchState.PrepeareTurn)
+            else if (_match.State == MatchState.PrepeareTurn)
             {
-                //TODO BORODIN добавить реализацию
+                MatchOver(_match.GetOpponent(_match.TurningPlayer), 3, 0);
+            }
+            else if (_match.State == MatchState.WaitingTurnResults)
+            {
+                if (_turnResults.IsP1ResultReceived && _turnResults.IsP2ResultReceived)
+                    MatchOver(null, 0, 0, true);
+                else
+                    MatchOver(_turnResults.IsP1ResultReceived ? _match.Player1 : _match.Player2, 3, 0);
             }
         }
 
@@ -164,9 +178,15 @@ namespace BilliardServer.Application.Matches
             TryCompleteTurn();
         }
 
+        public Result PlayerLeaveMatch(string playerId)
+        {
+            MatchOver(_match.GetOpponent(playerId), 3, 0);
+            return Result.Ok();
+        }
+
         public Task UserDisconnected(string userId)
         {
-            //TODO BORODIN добавить реализацию
+            MatchOver(_match.GetOpponent(userId), 3, 0);
             return Task.CompletedTask;
         }
 
@@ -190,7 +210,8 @@ namespace BilliardServer.Application.Matches
             }
             else if (_match.State == MatchState.Over)
             {
-                MatchOver(_turnResults.CalculatedResult!);
+                var winUser = _turnResults.CalculatedResult!.RulesResult.WinUserIdOrNull;
+                MatchOver(winUser, _match.GetScore(winUser), _match.GetScore(_match.GetOpponent(winUser)));
             }
 
             _turnResults.Clear();
@@ -220,16 +241,26 @@ namespace BilliardServer.Application.Matches
             _ = _responsesSender.SendResponseToUser(_match.Player2, new StartTurnResponseDto(startTurnData));
         }
 
-        private void MatchOver(ITurnResult turnResult)
+        private void MatchOver(string? winPlayerOrNull, int winPlayerScore, int losePlayerScore, bool afterServerError = false)
         {
-            //TODO BORODIN добавить реализацию
-            _logger.LogError($"[MatchControl] matchId  {_match.Id} over. WinnerId: {turnResult.RulesResult.WinUserIdOrNull}");
+            var data = new MatchOverData { MatchId = _match.Id, WinPlayerIdOrNull = winPlayerOrNull, 
+                WinPlayerScore = winPlayerScore, LosePlayerScore = losePlayerScore, AfterServerError = afterServerError };
+            _ = _responsesSender.SendResponseToUser(_match.Player1, new MatchOverResponseDto(data));
+            _ = _responsesSender.SendResponseToUser(_match.Player2, new MatchOverResponseDto(data));
+            _mediator.Send(new DeleteMatchCommand(_match.Id));
         }
 
         private void MatchDesynced(ShotValidateResult validateResult)
         {
-            //TODO BORODIN добавить реализацию
             _logger.LogError($"[MatchControl] matchId  {_match.Id} desync: {validateResult}");
+            if (validateResult == ShotValidateResult.Player1Desync)
+                MatchOver(_match.Player2, 3, 0);
+            else if (validateResult == ShotValidateResult.Player2Desync)
+                MatchOver(_match.Player1, 3, 0);
+            else if (validateResult == ShotValidateResult.FullDesync || validateResult == ShotValidateResult.DesyncServerWithFront)
+                MatchOver(null, 0, 0, true);
+            else
+                _logger.LogError($"[MatchControl] MatchDesynced with {validateResult} is not implemented");
         }
 
         public void Dispose()

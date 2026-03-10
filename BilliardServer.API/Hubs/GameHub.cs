@@ -80,6 +80,8 @@ namespace BilliardServer.API.AsyncMessaging.Hubs
             await base.OnDisconnectedAsync(exception);
         }
 
+        public static bool IsUserHaveActiveConnection(string userId) => _connectedUsers.ContainsKey(userId);
+
         private string GetUserId()
         {
             var userId = Context.User!.FindFirstValue(ClaimTypes.NameIdentifier);

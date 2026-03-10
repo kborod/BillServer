@@ -20,9 +20,20 @@ namespace BilliardServer.Application.Matches.Match
 
         public override ICalculateContext GetContextForCalculateShot(AimInfo aimInfo, int cuePower)
         {
+            StateEndTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds() + WaitTurnResultsStateSeconds;
             ChangeState(MatchState.WaitingTurnResults);
+
             return new CalculatePoolShotContext(Id, GameType, BallDatas, aimInfo, TurningPlayer,
                 GetPlayerBallType(TurningPlayer), GetOpponent(TurningPlayer), MatchShotsCount == 0, TurnSettings.MoveOnlyInKitchen, cuePower);
+        }
+        public override int GetScore(string playerId)
+        {
+            var ballType = GetPlayerBallType(playerId);
+            if (ballType == PoolBallType.None) 
+                return 0;
+            return BallDatas
+                .Where(b => b.Number.GetPoolBallType() == ballType && b.IsRemoved)
+                .Count();
         }
 
         public override void ProcessTurnResult(ITurnResult turnResult)

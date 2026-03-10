@@ -20,16 +20,16 @@ namespace Kborod.BilliardCore
 
 
         /// <summary> Признак, надо ли обновить состояние после итерации. </summary>
-        public bool NeedUpdateState { get; set; } = false;
+        public bool NeedUpdateState { get; set; }
 
         /// <summary> Признак - находится ли шар в состоянии покоя </summary>
-        public bool IsSleep { get; set; } = true;
+        public bool IsSleep { get; set; }
 
         /// <summary> вектор поступательного движения шара </summary>
-        public MyVector v { get; private set; } = new MyVector();
+        public MyVector v { get; private set; }
 
         /// <summary> Вектор вертикального вращения шара </summary>
-        public MyVector vVertSpin { get; private set; } = new MyVector();
+        public MyVector vVertSpin { get; private set; }
 		
 		/// <summary>
 		/// Сила бокового вращения шара (длина вектора корректировки отскока)
@@ -43,10 +43,10 @@ namespace Kborod.BilliardCore
 
         //ШАР ЗАБИТ:
         /// <summary> Луза, в которую забит шар. </summary>
-        public Pocket PocketRemoveTo { get; set; } = null;
+        public Pocket PocketRemoveTo { get; set; }
 
         /// <summary> Оставшееся неинтегрированное время тика после забития шара </summary>
-        public Fixed64 RemoveDeltaTime { get;  set; }  = Fixed64.Zero;
+        public Fixed64 RemoveDeltaTime { get;  set; }
 
         /// <summary> Координата Z (для скрытия шара под столом) </summary>
         public Fixed64 Zcoordinate { get; private set; }
@@ -266,7 +266,11 @@ namespace Kborod.BilliardCore
 			NeedUpdateState = false;
 			IsSleep = true;
 			PocketRemoveTo = null;
-			IsRemoved = false;
+			RemoveDeltaTime = Fixed64.Zero;
+            IsRemoved = false;
+			v = new MyVector();
+			vVertSpin = new MyVector();
+			SideSpin = Fixed64.Zero;
 			MoveToUpperLayer();
 		}
 

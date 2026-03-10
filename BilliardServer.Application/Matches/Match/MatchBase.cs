@@ -17,12 +17,13 @@ namespace BilliardServer.Application.Matches.Match
         public List<BallData> BallDatas { get; private set; }
         public TurnSettings TurnSettings { get; private set; }
 
-        public long StateEndTimestamp { get; private set; }
+        public long StateEndTimestamp { get; protected set; }
 
         protected int MatchShotsCount = 0;
 
-        private const int InitClientsWaitingSeconds = 20;
-        private const int ShotDurationSeconds = 2000;
+        protected const int InitClientsStateSeconds = 20;
+        protected const int PrepeareTurnStateSeconds = 2000;
+        protected const int WaitTurnResultsStateSeconds = 20;
 
         protected readonly ILogger _logger;
 
@@ -39,32 +40,39 @@ namespace BilliardServer.Application.Matches.Match
 
             _logger = logger;
 
-            StateEndTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds() + InitClientsWaitingSeconds;
+            StateEndTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds() + InitClientsStateSeconds;
 
             ChangeState(MatchState.WaitingPlayersInit);
         }
 
         public abstract ICalculateContext GetContextForCalculateShot(AimInfo aimInfo, int cuePower);
 
+        public abstract int GetScore(string playerId);
+
         public void PlayersInitedHandler()
         {
-            StateEndTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds() + ShotDurationSeconds;
+            StateEndTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds() + PrepeareTurnStateSeconds;
             ChangeState(MatchState.PrepeareTurn);
         }
 
         public virtual void ProcessTurnResult(ITurnResult result)
         {
-            TurningPlayer = result.RulesResult.NextTurnPlayerId;
-            TurnSettings = result.NextTurnSettings;
             BallDatas = result.RulesResult.BallDatas;
-            StateEndTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds() + ShotDurationSeconds;
-
-            MatchShotsCount++;
 
             if (result.RulesResult.WinUserIdOrNull != null)
+            {
                 ChangeState(MatchState.Over);
+            }
             else
+            {
+                TurningPlayer = result.RulesResult.NextTurnPlayerId;
+                TurnSettings = result.NextTurnSettings;
+                StateEndTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds() + PrepeareTurnStateSeconds;
+
+                MatchShotsCount++;
+
                 ChangeState(MatchState.PrepeareTurn);
+            }
         }
 
         public string GetOpponent(string playerId)

@@ -4,7 +4,6 @@ using MediatR;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.ObjectPool;
-using System.Text.Json;
 
 namespace BilliardServer.Application.ShotCalculating
 {
