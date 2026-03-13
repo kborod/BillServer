@@ -10,13 +10,15 @@ namespace BilliardServer.Application.Features.Users
         private IUserDisconnectedHandler _handler;
         private MatchMakingService _matchMakingService;
         private MatchesService _matchesService;
+        private RematchesService _rematchesService;
 
         public UserDisonnectedEventHandler(IUserDisconnectedHandler handler, 
-            MatchMakingService matchMakingService, MatchesService matchesService)
+            MatchMakingService matchMakingService, MatchesService matchesService, RematchesService rematchesService)
         {
             _handler = handler;
             _matchMakingService = matchMakingService;
             _matchesService = matchesService;
+            _rematchesService = rematchesService;
         }
 
         public async Task Handle(UserDisconnectedEvent notification, CancellationToken cancellationToken)
@@ -24,6 +26,7 @@ namespace BilliardServer.Application.Features.Users
             await _handler.UserDisconnectedHandler(notification.UserId, notification.BeforeStartNewSession);
             await _matchMakingService.CancelSearch(notification.UserId);
             await _matchesService.UserDisconnected(notification.UserId);
+            await _rematchesService.UserDisconnected(notification.UserId);
         }
     }
 }

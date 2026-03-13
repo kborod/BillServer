@@ -4,5 +4,5 @@ using MediatR;
 
 namespace BilliardServer.Application.Features.Users
 {
-    public record GetUserProfileCommand(string id) : IRequest<Result<UserProfileDto>>;
+    public record GetUserProfileCommand(string id) : IRequest<Result<UserProfile>>;
 }

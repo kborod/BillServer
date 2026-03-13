@@ -10,7 +10,7 @@ namespace BilliardServer.Application.Matches.Match
     {
         private PoolBallType _player1BallType = PoolBallType.None;
 
-        public MatchPoolEight(CreateMatchContext context, ILogger logger) : base(context, logger) { }
+        public MatchPoolEight(MatchContext context, ILogger logger) : base(context, logger) { }
 
         protected override void Init(out List<BallData> ballDatas, out TurnSettings firstTurnSettings, int posNum)
         {

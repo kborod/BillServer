@@ -3,7 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 public interface IMatchControlFactory
 {
-    MatchControl Create(CreateMatchContext context);
+    MatchControl Create(MatchContext context);
 }
 
 public class MatchControlFactory : IMatchControlFactory
@@ -15,7 +15,7 @@ public class MatchControlFactory : IMatchControlFactory
         _serviceProvider = serviceProvider;
     }
 
-    public MatchControl Create(CreateMatchContext context)
+    public MatchControl Create(MatchContext context)
     {
         return ActivatorUtilities.CreateInstance<MatchControl>(
             _serviceProvider,

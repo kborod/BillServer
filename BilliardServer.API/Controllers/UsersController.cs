@@ -36,7 +36,7 @@ namespace BilliardServer.API.Controllers
 
         //[Authorize(Roles = UserRoleType.User)]
         [HttpGet("GetProfile")]
-        public async Task<ActionResult<UserProfileDto>> GetProfile(string id)
+        public async Task<ActionResult<UserProfile>> GetProfile(string id)
         {
             var result = await _mediator.Send(new GetUserProfileCommand(id));
 

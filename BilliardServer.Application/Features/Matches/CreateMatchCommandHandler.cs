@@ -15,7 +15,7 @@ namespace BilliardServer.Application.Features.Matches
 
         public Task<Result> Handle(CreateMatchCommand request, CancellationToken cancellationToken)
         {
-            return _matchesService.CreateMatch(request.User1Id, request.User2Id, request.gameType, request.betType);
+            return _matchesService.CreateMatch(request.User1Id, request.User2Id, request.turningPlayer, request.gameType, request.betType);
         }
     }
 }

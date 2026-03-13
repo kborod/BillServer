@@ -24,7 +24,7 @@ namespace BilliardServer.Application.Matches
 
         private int _newMatchId => Interlocked.Increment(ref _lastMatchId);
 
-        public MatchesService(IOptions<MatchesServiceConfig> _config, ILogger logger, IServiceProvider sp, 
+        public MatchesService(IOptions<MatchesServiceConfig> _config, ILogger logger,
             IMatchControlFactory matchControlFactory, IServiceProvider serviceProvider)
         {
             _checkMatchesPeriod = TimeSpan.FromSeconds(_config.Value.CheckMatchesPeriodSeconds);
@@ -35,12 +35,12 @@ namespace BilliardServer.Application.Matches
             _logger.LogInformation($"[MatchesService] Initialized with check period {_checkMatchesPeriod.TotalSeconds} seconds");
         }
 
-        public async Task<Result> CreateMatch(string player1, string player2, GameType gameType, BetType betType)
+        public async Task<Result> CreateMatch(string player1, string player2, string turningPlayer, GameType gameType, BetType betType)
         {
             var id = _newMatchId.ToString();
             var posNum = 1;
 
-            var context = new CreateMatchContext(id, player1, player2, player1, gameType, betType, posNum);
+            var context = new MatchContext(id, player1, player2, turningPlayer, gameType, betType, posNum);
             
             using var scope = _serviceProvider.CreateScope();
             var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
@@ -102,10 +102,24 @@ namespace BilliardServer.Application.Matches
         {
             while (!stoppingToken.IsCancellationRequested)
             {
+                var pairs = _matches.ToArray();
+
                 var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-                foreach (var pair in _matches)
+                
+                foreach (var pair in pairs)
                 {
-                    pair.Value.PeriodicCheck(timestamp);
+                    if (!_matches.ContainsKey(pair.Key))
+                        continue;
+
+                    try
+                    {
+                        pair.Value.PeriodicCheck(timestamp);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Match {MatchId} periodic check error ", pair.Value.Context.Id);
+                        _ = DeleteMatch(pair.Value.Context.Id);
+                    }
                 }
 
                 await Task.Delay(_checkMatchesPeriod, stoppingToken);

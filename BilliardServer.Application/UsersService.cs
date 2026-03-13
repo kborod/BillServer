@@ -24,12 +24,12 @@ namespace Billiard.Application
             return _usersRepository.GetByEmail(email);
         }
 
-        public Task<Result<UserProfileDto>> GetUserProfile(string id)
+        public Task<Result<UserProfile>> GetUserProfile(string id)
         {
             return _usersRepository.GetUserProfile(id);
         }
 
-        public Task<Result<List<UserProfileDto>>> GetUserProfiles(List<string> ids)
+        public Task<Result<List<UserProfile>>> GetUserProfiles(List<string> ids)
         {
             return _usersRepository.GetUserProfiles(ids);
         }

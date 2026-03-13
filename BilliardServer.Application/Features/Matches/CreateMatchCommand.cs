@@ -4,5 +4,5 @@ using MediatR;
 
 namespace BilliardServer.Application.Features.Matches
 {
-    public record CreateMatchCommand(string User1Id, string User2Id, GameType gameType, BetType betType) : IRequest<Result>;
+    public record CreateMatchCommand(string User1Id, string User2Id, string turningPlayer, GameType gameType, BetType betType) : IRequest<Result>;
 }

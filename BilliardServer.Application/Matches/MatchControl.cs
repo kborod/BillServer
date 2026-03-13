@@ -1,4 +1,5 @@
 ﻿using BilliardServer.Application.Abstractions.AsyncMessaging;
+using BilliardServer.Application.Features.Matches;
 using BilliardServer.Application.Features.MatchMaking;
 using BilliardServer.Application.Features.MatchShotsCalculate;
 using BilliardServer.Application.Matches.Match;
@@ -9,13 +10,14 @@ using Kborod.BilliardCore.Enums;
 using Kborod.BilliardCore.Rules;
 using Kborod.SharedDto;
 using MediatR;
+using Microsoft.AspNetCore.Rewrite;
 using Microsoft.Extensions.Logging;
 
 namespace BilliardServer.Application.Matches
 {
     public class MatchControl : IDisposable
     {
-        public readonly CreateMatchContext Context;
+        public readonly MatchContext Context;
         private readonly IMediator _mediator;
         private readonly IMessagingResponseSenderService _responsesSender;
         private readonly ILogger _logger;
@@ -27,7 +29,7 @@ namespace BilliardServer.Application.Matches
 
         private object _lockObj = new object();
 
-        public MatchControl(IMediator mediator, IMessagingResponseSenderService responsesSender, ILogger logger, CreateMatchContext context)
+        public MatchControl(IMediator mediator, IMessagingResponseSenderService responsesSender, ILogger logger, MatchContext context)
         {
             Context = context;
             _mediator = mediator;
@@ -35,7 +37,7 @@ namespace BilliardServer.Application.Matches
             _logger = logger;
         }
 
-        public async Task<Result> Init(List<UserProfileDto> profiles)
+        public async Task<Result> Init(List<UserProfile> profiles)
         {
             if (Context.GameType == GameType.PoolEight)
                 _match = new MatchPoolEight(Context, _logger);
@@ -71,20 +73,20 @@ namespace BilliardServer.Application.Matches
             if (_match.State == MatchState.WaitingPlayersInit)
             {
                 if (_playersInitResults.Player1Inited == false && _playersInitResults.Player2Inited == false)
-                    MatchOver(null, 0, 0, true);
+                    MatchOver(null, 0, 0, false, true);
                 else
-                    MatchOver(_playersInitResults.Player1Inited ? _match.Player1 : _match.Player2, 3, 0);
+                    MatchOver(_playersInitResults.Player1Inited ? _match.Player1 : _match.Player2, 3, 0, false);
             }
             else if (_match.State == MatchState.PrepeareTurn)
             {
-                MatchOver(_match.GetOpponent(_match.TurningPlayer), 3, 0);
+                MatchOver(_match.GetOpponent(_match.TurningPlayer), 3, 0, false);
             }
             else if (_match.State == MatchState.WaitingTurnResults)
             {
                 if (_turnResults.IsP1ResultReceived && _turnResults.IsP2ResultReceived)
-                    MatchOver(null, 0, 0, true);
+                    MatchOver(null, 0, 0, false, true);
                 else
-                    MatchOver(_turnResults.IsP1ResultReceived ? _match.Player1 : _match.Player2, 3, 0);
+                    MatchOver(_turnResults.IsP1ResultReceived ? _match.Player1 : _match.Player2, 3, 0, false);
             }
         }
 
@@ -180,13 +182,13 @@ namespace BilliardServer.Application.Matches
 
         public Result PlayerLeaveMatch(string playerId)
         {
-            MatchOver(_match.GetOpponent(playerId), 3, 0);
+            MatchOver(_match.GetOpponent(playerId), 3, 0, false);
             return Result.Ok();
         }
 
         public Task UserDisconnected(string userId)
         {
-            MatchOver(_match.GetOpponent(userId), 3, 0);
+            MatchOver(_match.GetOpponent(userId), 3, 0, false);
             return Task.CompletedTask;
         }
 
@@ -202,7 +204,8 @@ namespace BilliardServer.Application.Matches
                 return;
             }
 
-            _match.ProcessTurnResult(_turnResults.CalculatedResult!);
+            var calculatedResult = _turnResults.CalculatedResult!;
+            _match.ProcessTurnResult(calculatedResult);
 
             if (_match.State == MatchState.PrepeareTurn)
             {
@@ -210,8 +213,9 @@ namespace BilliardServer.Application.Matches
             }
             else if (_match.State == MatchState.Over)
             {
-                var winUser = _turnResults.CalculatedResult!.RulesResult.WinUserIdOrNull;
-                MatchOver(winUser, _match.GetScore(winUser), _match.GetScore(_match.GetOpponent(winUser)));
+                var winUser = calculatedResult.RulesResult.WinUserIdOrNull;
+                var afterFoul = calculatedResult.RulesResult.Foul != FoulType.None;
+                MatchOver(winUser, afterFoul ? 3 : _match.GetScore(winUser), afterFoul ? 0 : _match.GetScore(_match.GetOpponent(winUser)), true);
             }
 
             _turnResults.Clear();
@@ -241,22 +245,28 @@ namespace BilliardServer.Application.Matches
             _ = _responsesSender.SendResponseToUser(_match.Player2, new StartTurnResponseDto(startTurnData));
         }
 
-        private void MatchOver(string? winPlayerOrNull, int winPlayerScore, int losePlayerScore, bool afterServerError = false)
+        private async void MatchOver(string? winPlayerOrNull, int winPlayerScore, int losePlayerScore, bool rematchAvailable, bool afterServerError = false)
         {
-            var data = new MatchOverData { MatchId = _match.Id, WinPlayerIdOrNull = winPlayerOrNull, 
-                WinPlayerScore = winPlayerScore, LosePlayerScore = losePlayerScore, AfterServerError = afterServerError };
+            
+            if (rematchAvailable)
+                _ = await _mediator.Send(new AddMatchToReplayServiceCommand(Context));
+
+            var data = new MatchOverData { MatchId = _match.Id, GameType = Context.GameType, BetType = Context.BetType, WinPlayerIdOrNull = winPlayerOrNull, WinnerScore = winPlayerScore,
+                LoserScore = losePlayerScore, AfterServerError = afterServerError, RematchAvailable = rematchAvailable };
+
             _ = _responsesSender.SendResponseToUser(_match.Player1, new MatchOverResponseDto(data));
             _ = _responsesSender.SendResponseToUser(_match.Player2, new MatchOverResponseDto(data));
-            _mediator.Send(new DeleteMatchCommand(_match.Id));
+
+            _ = _mediator.Send(new DeleteMatchCommand(_match.Id));
         }
 
         private void MatchDesynced(ShotValidateResult validateResult)
         {
             _logger.LogError($"[MatchControl] matchId  {_match.Id} desync: {validateResult}");
             if (validateResult == ShotValidateResult.Player1Desync)
-                MatchOver(_match.Player2, 3, 0);
+                MatchOver(_match.Player2, 3, 0, false);
             else if (validateResult == ShotValidateResult.Player2Desync)
-                MatchOver(_match.Player1, 3, 0);
+                MatchOver(_match.Player1, 3, 0, false);
             else if (validateResult == ShotValidateResult.FullDesync || validateResult == ShotValidateResult.DesyncServerWithFront)
                 MatchOver(null, 0, 0, true);
             else

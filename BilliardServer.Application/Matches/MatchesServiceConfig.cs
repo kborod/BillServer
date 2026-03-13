@@ -5,5 +5,6 @@
         public const string SectionName = "MatchesServiceConfig";
 
         public float CheckMatchesPeriodSeconds { get; set; } = 3f;
+        public int WaitReplayMatchSeconds { get; set; } = 15;
     }
 }

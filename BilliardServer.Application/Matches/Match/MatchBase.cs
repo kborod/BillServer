@@ -27,7 +27,7 @@ namespace BilliardServer.Application.Matches.Match
 
         protected readonly ILogger _logger;
 
-        protected MatchBase(CreateMatchContext context, ILogger logger)
+        protected MatchBase(MatchContext context, ILogger logger)
         {
             GameType = context.GameType;
             Id = context.Id;

@@ -65,7 +65,8 @@ namespace BilliardServer.Application.MatchMaking
             if (opponentId != null)
             {
                 _users.TryRemove(opponentId, out var _);
-                return await _mediator.Send(new CreateMatchCommand(userId, opponentId, gameType, betType));
+                var turningPlayer = Random.Shared.Next(2) > 0 ? userId : opponentId;
+                return await _mediator.Send(new CreateMatchCommand(userId, opponentId, turningPlayer, gameType, betType));
             }
             else
             {

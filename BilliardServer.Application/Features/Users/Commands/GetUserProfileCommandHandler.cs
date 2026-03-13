@@ -5,7 +5,7 @@ using MediatR;
 
 namespace BilliardServer.Application.Features.Users
 {
-    public class GetUserProfileCommandHandler : IRequestHandler<GetUserProfileCommand, Result<UserProfileDto>>
+    public class GetUserProfileCommandHandler : IRequestHandler<GetUserProfileCommand, Result<UserProfile>>
     {
         private readonly IUsersService _usersService;
 
@@ -14,7 +14,7 @@ namespace BilliardServer.Application.Features.Users
             _usersService = usersService;
         }
 
-        public Task<Result<UserProfileDto>> Handle(GetUserProfileCommand request, CancellationToken cancellationToken)
+        public Task<Result<UserProfile>> Handle(GetUserProfileCommand request, CancellationToken cancellationToken)
         {
             return _usersService.GetUserProfile(request.id);
         }

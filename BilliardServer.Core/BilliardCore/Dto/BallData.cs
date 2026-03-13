@@ -16,7 +16,6 @@ namespace Kborod.BilliardCore
 
         public override string ToString()
         {
-            //return $"Num:{Number}_IsRemoved:{IsRemoved}_Xraw:{Xraw} ({new Fixed64(Xraw).ToFloat()})_Yraw:{Yraw} ({new Fixed64(Yraw).ToFloat()})";
             return $"Num:{Number}_IsRemoved:{IsRemoved}_Xraw:{Xraw} _Yraw:{Yraw} ";
         }
     }

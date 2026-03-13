@@ -55,6 +55,18 @@ namespace BilliardServer.API.AsyncMessaging
                 var result = await mediator.Send(new UserLeaveMatchCommand(dto.MatchId, userId));
                 SendErrorIfNeed(result, responseSender);
             }
+            else if (requestEnvelope.RequestType == RequestType.ReadyRematch)
+            {
+                var dto = requestEnvelope.Payload.Deserialize<ReadyRematchDto>()!;
+                var result = await mediator.Send(new UserReadyRematchCommand(dto.MatchId, userId));
+                SendErrorIfNeed(result, responseSender);
+            }
+            else if (requestEnvelope.RequestType == RequestType.CancelRematch)
+            {
+                var dto = requestEnvelope.Payload.Deserialize<CancelRematchDto>()!;
+                var result = await mediator.Send(new UserCancelRematchCommand(dto.MatchId, userId));
+                SendErrorIfNeed(result, responseSender);
+            }
             else
             {
                 throw new InvalidOperationException($"Unsupported request type: {requestEnvelope.RequestType}");

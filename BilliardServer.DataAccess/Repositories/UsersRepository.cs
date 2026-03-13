@@ -38,26 +38,26 @@ namespace BilliardServer.Infrastructure.Repositories
             return Result<User?>.Ok(entity.CreateUser());
         }
 
-        public async Task<Result<UserProfileDto>> GetUserProfile(string id)
+        public async Task<Result<UserProfile>> GetUserProfile(string id)
         {
             var entity = await _userManager.FindByIdAsync(id);
             if (entity == null)
-                return Result<UserProfileDto>.Fail("user not found");
+                return Result<UserProfile>.Fail("user not found");
             else
-                return Result<UserProfileDto>.Ok(new UserProfileDto { Id = entity.Id.ToString(), Username = entity.Name, Avatar = entity.Avatar });
+                return Result<UserProfile>.Ok(new UserProfile { Id = entity.Id.ToString(), Name = entity.Name, Avatar = entity.Avatar });
         }
 
-        public async Task<Result<List<UserProfileDto>>> GetUserProfiles(List<string> ids)
+        public async Task<Result<List<UserProfile>>> GetUserProfiles(List<string> ids)
         {
             var idsLong = ids.Select(id => long.Parse(id));
 
             var r = await _context.Users
                 .AsNoTracking()
                 .Where(entity => idsLong.Contains(entity.Id))
-                .Select(entity => new UserProfileDto { Id = entity.Id.ToString(), Username = entity.Name, Avatar = entity.Avatar })
+                .Select(entity => new UserProfile { Id = entity.Id.ToString(), Name = entity.Name, Avatar = entity.Avatar })
                 .ToListAsync();
 
-            return Result<List<UserProfileDto>>.Ok(r);
+            return Result<List<UserProfile>>.Ok(r);
         }
 
         //public async Task Update(string id, string name, int avatar)

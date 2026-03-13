@@ -189,6 +189,9 @@ public partial class Program
         builder.Services.AddSingleton<MatchMakingService>()
             .AddHostedService(sp => sp.GetRequiredService<MatchMakingService>());
 
+        builder.Services.AddSingleton<RematchesService>()
+            .AddHostedService(sp => sp.GetRequiredService<RematchesService>());
+
         builder.Services.AddScoped<IUsersRepository, UsersRepository>();
         builder.Services.AddScoped<IUsersService, UsersService>();
         builder.Services.AddScoped<IAuthService, AuthService>();

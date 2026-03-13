@@ -25,7 +25,7 @@ namespace Kborod.BilliardCore.Rules.PoolEight
             result.Foul = foul;
             result.BallTypeSelected = ballTypeSelected;
             result.GameOver = shotResult.PocketedBalls.Contains(8);
-            result.UserWin = foul != FoulType.None && shotResult.PocketedBalls.Contains(8) && IsAllBallsPocketed(balls, playerBallType);
+            result.UserWin = foul == FoulType.None && shotResult.PocketedBalls.Contains(8);
 
             return result;
         }
@@ -80,20 +80,43 @@ namespace Kborod.BilliardCore.Rules.PoolEight
         {
             if (IsFatalFoul())
                 return FoulType.P8_EightPocketed;
-            else if (shotResult.PocketedBalls.Contains(0))
+            if (shotResult.PocketedBalls.Contains(8))
+                return FoulType.None;
+            
+            if (shotResult.PocketedBalls.Contains(0))
                 return FoulType.P8_CueBallPocketed;
             if (shotResult.FirstCollisionBallNum == null)
                 return FoulType.P8_NoCollision;
             if (shotResult.PocketedBalls.Count == 0 && shotResult.WallsCollisionCount == 0)
                 return FoulType.P8_WallsCollisionsRequired;
-            else if (playerBallType != PoolBallType.None && shotResult.FirstCollisionBallNum.Value.GetPoolBallType() != playerBallType)
-                return FoulType.P8_FirstCollision;
+            if (playerBallType != PoolBallType.None )
+            {
+                if (shotResult.FirstCollisionBallNum.Value.GetPoolBallType() != playerBallType)
+                {
+                    if (shotResult.FirstCollisionBallNum.Value != 8)
+                        return FoulType.P8_FirstCollision;
+                    else if(!IsAllBallsPocketed(balls, playerBallType) || shotResult.PocketedBalls.Any(bNumber => bNumber.GetPoolBallType() == playerBallType))
+                        return FoulType.P8_FirstCollision;
+                }
+            }
 
             return FoulType.None;
 
             bool IsFatalFoul()
             {
-                return shotResult.PocketedBalls.Contains(8) && !IsAllBallsPocketed(balls, playerBallType);
+                if (shotResult.PocketedBalls.Contains(8) == false)
+                    return false;
+                if (shotResult.PocketedBalls.Contains(0))
+                    return true;
+                if (playerBallType == PoolBallType.None)
+                    return true;
+                if (IsAllBallsPocketed(balls, playerBallType) == false)
+                    return true;
+                if (shotResult.PocketedBalls.Any(bNumber => bNumber != 8 && bNumber.GetPoolBallType() == playerBallType))
+                    return true;
+                if (shotResult.FirstCollisionBallNum != 8)
+                    return true;
+                return false;
             }
         }
 
