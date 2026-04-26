@@ -3,8 +3,8 @@
     public enum BetType
     {
         None = 0,
-        Table_1,
-        Table_2,
-        Table_3,
+        PVP_100,
+        PVP_500,
+        PVP_1000,
     }
 }

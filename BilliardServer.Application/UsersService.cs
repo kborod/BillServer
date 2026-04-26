@@ -33,5 +33,21 @@ namespace Billiard.Application
         {
             return _usersRepository.GetUserProfiles(ids);
         }
+
+        public async Task<Result> SetAvatar(string userId, int avatarId)
+        {
+            var result = await _usersRepository.GetUser(userId);
+
+            if (result.IsSuccess == false)
+                return Result.Fail(result.Error!);
+
+            var user = result.Value!;
+            if (user.SetAvatar(avatarId) == false)
+                return Result.Fail("User cant use this avatar");
+
+            await _usersRepository.UpdateAvatar(user.Id, avatarId);
+
+            return Result.Ok();
+        }
     }
 }

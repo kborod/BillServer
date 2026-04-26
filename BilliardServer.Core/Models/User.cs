@@ -2,11 +2,23 @@
 {
     public class User
     {
-        public long Id { get; }
-        public string Name { get; } = string.Empty;
-        public int Avatar { get; } = 1;
+        public string Id { get; }
+        public string Name { get; private set; } = string.Empty;
+        public int Avatar { get; private set; } = 1;
 
-        public User(long id, string name, int avatar)
+        public int Exp { get; private set; }
+        public int Rating { get; private set; }
+
+        public int Chips { get; private set; }
+        public int Coins { get; private set; }
+
+        public int PartiesCount { get; private set; }
+        public int WinPartiesCount { get; private set; }
+        public int TotalChipsPrize { get; private set; }
+
+        public User(string id, string name, int avatar,
+            int exp,int rating, int chips, int coins,
+            int pariesCount, int winPartiesCount, int totalChipsPrize)
         {
             var validateResult = ValidateParamsForNew(name, avatar);
             if (string.IsNullOrEmpty(validateResult) == false)
@@ -15,6 +27,13 @@
             Id = id;
             Name = name;
             Avatar = avatar;
+            Exp = exp;
+            Rating = rating;
+            Chips = chips;
+            Coins = coins;
+            PartiesCount = pariesCount;
+            WinPartiesCount = winPartiesCount;
+            TotalChipsPrize = totalChipsPrize;
         }
 
         public static string? ValidateParamsForNew(string name, int avatar)
@@ -24,6 +43,15 @@
             if (avatar < 0)
                 return "Avatar cant be lower than 0";
             return null;
+        }
+
+        public bool SetAvatar(int avatarId)
+        {
+            if (avatarId > 0 && avatarId < 15 == false)
+                return false;
+
+            Avatar = avatarId;
+            return true;
         }
     }
 }

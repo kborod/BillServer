@@ -10,5 +10,8 @@ namespace BilliardServer.Core.Abstractions
         Task<Result<User?>> GetByEmail(string email);
         Task<Result<UserProfile>> GetUserProfile(string id);
         Task<Result<List<UserProfile>>> GetUserProfiles(List<string> ids);
+
+        Task<Result> UpdateAvatar(string userId, int avatarId);
+        Task<Result> UpdateAfterMatch(string userId, int expDelta, int ratingDelta, bool isWin, int chipsPrize, int matchesCountDelta = +1);
     }
 }

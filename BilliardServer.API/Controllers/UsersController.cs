@@ -6,6 +6,7 @@ using Kborod.SharedDto;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace BilliardServer.API.Controllers
 {
@@ -22,10 +23,14 @@ namespace BilliardServer.API.Controllers
             _mediator = mediator;
         }
 
-        //[Authorize(Roles = UserRoleType.User)]
-        [HttpGet("GetUser")]
-        public async Task<ActionResult<User>> GetUser(string id)
+        [Authorize(Roles = UserRoleType.User)]
+        [HttpGet("Me")]
+        public async Task<ActionResult<User>> GetMe()
         {
+            var id = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (id == null)
+                return Unauthorized();
+
             var result = await _usersService.GetUser(id);
 
             if (result.IsSuccess)
@@ -34,7 +39,35 @@ namespace BilliardServer.API.Controllers
                 return BadRequest(result.Error);
         }
 
+        [Authorize(Roles = UserRoleType.User)]
+        [HttpPost("ChangeAvatar")]
+        public async Task<ActionResult<User>> SetAvatar([FromBody] int avatarId)
+        {
+            var id = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (id == null)
+                return Unauthorized();
+
+            var result = await _usersService.SetAvatar(id, avatarId);
+
+            if (result.IsSuccess)
+                return Ok();
+            else
+                return BadRequest(result.Error);
+        }
+
         //[Authorize(Roles = UserRoleType.User)]
+        //[HttpGet("GetUser")]
+        //public async Task<ActionResult<User>> GetUser(string id)
+        //{
+        //    var result = await _usersService.GetUser(id);
+
+        //    if (result.IsSuccess)
+        //        return Ok(result.Value);
+        //    else
+        //        return BadRequest(result.Error);
+        //}
+
+        [Authorize(Roles = UserRoleType.User)]
         [HttpGet("GetProfile")]
         public async Task<ActionResult<UserProfile>> GetProfile(string id)
         {
@@ -46,9 +79,9 @@ namespace BilliardServer.API.Controllers
                 return BadRequest(result.Error);
         }
 
-        //[Authorize(Roles = UserRoleType.User)]
+        [Authorize(Roles = UserRoleType.User)]
         [HttpGet("GetProfiles")]
-        public async Task<ActionResult<int[]>> GetUserProfile([FromQuery] List<string> ids)
+        public async Task<ActionResult<int[]>> GetProfiles([FromQuery] List<string> ids)
         {
             var result = await _mediator.Send(new GetUserProfilesCommand(ids));
 
@@ -57,14 +90,5 @@ namespace BilliardServer.API.Controllers
             else
                 return BadRequest(result.Error);
         }
-
-        //[Authorize(Roles = RoleType.User)]
-        //[HttpPost]
-        //public async Task<ActionResult<UserResponse>> AddUser(string name, int avatar)
-        //{
-        //    var user = await _usersService.Create(name, avatar);
-
-        //    return Ok(new UserResponse(user.Id, user.Name, user.Avatar));
-        //}
     }
 }

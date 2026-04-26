@@ -10,5 +10,6 @@ namespace BilliardServer.Core.Abstractions
         Task<Result<User?>> GetByEmail(string email);
         Task<Result<UserProfile>> GetUserProfile(string id);
         Task<Result<List<UserProfile>>> GetUserProfiles(List<string> ids);
+        Task<Result> SetAvatar(string userId, int avatarId);
     }
 }

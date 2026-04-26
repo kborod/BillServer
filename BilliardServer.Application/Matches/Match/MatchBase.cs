@@ -21,9 +21,9 @@ namespace BilliardServer.Application.Matches.Match
 
         protected int MatchShotsCount = 0;
 
-        protected const int InitClientsStateSeconds = 20;
-        protected const int PrepeareTurnStateSeconds = 2000;
-        protected const int WaitTurnResultsStateSeconds = 20;
+        protected const int InitClientsStateSeconds = 15;
+        protected const int PrepeareTurnStateSeconds = 25;
+        protected const int WaitTurnResultsStateSeconds = 18;
 
         protected readonly ILogger _logger;
 

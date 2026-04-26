@@ -28,7 +28,7 @@ public partial class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
-        builder.Services.AddMemoryCache();
+        //builder.Services.AddMemoryCache();
 
         builder.Services.AddControllers();
 

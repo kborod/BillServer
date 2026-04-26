@@ -17,7 +17,6 @@ namespace BilliardServer.API.AsyncMessaging.ReliableMessageDelivery
     public class ProtocolRequestsProcessor
     {
         private readonly ILogger _logger;
-        private readonly ConcurrentDictionary<string, SessionInfo> _userInfos = new();
 
         public ProtocolRequestsProcessor(ILogger logger)
         {

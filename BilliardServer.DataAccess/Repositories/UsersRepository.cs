@@ -60,16 +60,33 @@ namespace BilliardServer.Infrastructure.Repositories
             return Result<List<UserProfile>>.Ok(r);
         }
 
-        //public async Task Update(string id, string name, int avatar)
-        //{
-        //    long.TryParse(id, out var userId);
-        //    await _context.Users
-        //        .Where(u => u.Id == userId)
-        //        .ExecuteUpdateAsync(u => u
-        //            .SetProperty(u => u.Name, p => name)
-        //            .SetProperty(u => u.Avatar, p => avatar)
-        //            );
-        //}
+        public async Task<Result> UpdateAvatar(string userId, int avatarId)
+        {
+            long.TryParse(userId, out var id);
+            await _context.Users
+                .Where(u => u.Id == id)
+                .ExecuteUpdateAsync(u => u
+                    .SetProperty(u => u.Avatar, p => avatarId)
+                    );
+
+            return Result.Ok();
+        }
+
+        public async Task<Result> UpdateAfterMatch(string userId, int expDelta, int ratingDelta, bool isWin, int chipsPrize, int matchesCountDelta = 1)
+        {
+            long.TryParse(userId, out var id);
+            await _context.Users
+                .Where(u => u.Id == id)
+                .ExecuteUpdateAsync(u => u
+                    .SetProperty(u => u.Exp, p => EF.Functions.Greatest(p.Exp + expDelta, 0))
+                    .SetProperty(u => u.Rating, p => EF.Functions.Greatest(p.Rating + ratingDelta, 0))
+                    .SetProperty(u => u.WinPartiesCount, p => p.WinPartiesCount + (isWin ? 1 : 0))
+                    .SetProperty(u => u.TotalChipsPrize, p => p.TotalChipsPrize + chipsPrize)
+                    .SetProperty(u => u.PartiesCount, p => p.PartiesCount + matchesCountDelta)
+                    );
+
+            return Result.Ok();
+        }
 
         //public async Task Delete(string id)
         //{
