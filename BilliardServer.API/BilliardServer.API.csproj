@@ -10,6 +10,7 @@
     <PackageReference Include="AspNet.Security.OAuth.Yandex" Version="10.0.0" />
     <PackageReference Include="MediatR" Version="12.5.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.2" />
+    <PackageReference Include="StackExchange.Redis" Version="2.8.13" />
 	<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.2">
 		<PrivateAssets>all</PrivateAssets>
 		<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

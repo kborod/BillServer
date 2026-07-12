@@ -13,5 +13,10 @@ namespace BilliardServer.Core.Abstractions
 
         Task<Result> UpdateAvatar(string userId, int avatarId);
         Task<Result> UpdateAfterMatch(string userId, int expDelta, int ratingDelta, bool isWin, int chipsPrize, int matchesCountDelta = +1);
+
+        /// <summary>
+        /// Получить всех пользователей для таблицы лидеров
+        /// </summary>
+        Task<List<User>> GetAllUsersForLeaderboard();
     }
 }

@@ -5,6 +5,7 @@ using BilliardServer.API.AsyncMessaging.ReliableMessageDelivery;
 using BilliardServer.Application.Abstractions;
 using BilliardServer.Application.Abstractions.AsyncMessaging;
 using BilliardServer.Application.Features.Users;
+using BilliardServer.Application.Leaderboard;
 using BilliardServer.Application.Matches;
 using BilliardServer.Application.MatchMaking;
 using BilliardServer.Application.OnlineUsers;
@@ -20,6 +21,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using StackExchange.Redis;
 using System.Text;
 
 public partial class Program
@@ -82,6 +84,18 @@ public partial class Program
                     //.LogTo(Console.WriteLine, LogLevel.Information)
                     //.EnableDetailedErrors()
                 );
+
+        #endregion
+
+        #region Redis
+
+        var redisConnection = builder.Configuration.GetConnectionString("Redis") ?? "localhost:6379";
+        builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
+            ConnectionMultiplexer.Connect(redisConnection));
+
+        #endregion
+
+        #region Identity
 
         builder.Services
             .AddIdentityCore<UserEntity>(options =>
@@ -170,6 +184,10 @@ public partial class Program
             .Bind(builder.Configuration.GetSection(MatchesServiceConfig.SectionName))
             .ValidateDataAnnotations();
 
+        builder.Services.AddOptions<LeaderboardServiceConfig>()
+            .Bind(builder.Configuration.GetSection(LeaderboardServiceConfig.SectionName))
+            .ValidateDataAnnotations();
+
         #endregion
 
 
@@ -197,6 +215,10 @@ public partial class Program
         builder.Services.AddScoped<IAuthService, AuthService>();
         builder.Services.AddTransient<TokenService>();
 
+        builder.Services.AddSingleton<LeaderboardService>();
+        builder.Services.AddSingleton<ILeaderboardService>(sp => sp.GetRequiredService<LeaderboardService>());
+        builder.Services.AddHostedService(sp => sp.GetRequiredService<LeaderboardService>());
+        builder.Services.AddHostedService<LeaderboardInitializer>();
 
         builder.Services.AddHostedService<ShotCalculationService>();
         builder.Services.AddSingleton<ShotCalculationQueue>();

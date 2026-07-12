@@ -88,12 +88,43 @@ namespace BilliardServer.Infrastructure.Repositories
             return Result.Ok();
         }
 
-        //public async Task Delete(string id)
-        //{
-        //    long.TryParse(id, out var userId);
-        //    await _context.Users
-        //        .Where(u => u.Id == userId)
-        //        .ExecuteDeleteAsync();
-        //}
+        public async Task<List<User>> GetAllUsersForLeaderboard()
+        {
+            var users = await _context.Users
+                .AsNoTracking()
+                .Select(entity => new User(
+                    entity.Id.ToString(),
+                    entity.Name,
+                    entity.Avatar,
+                    entity.Exp,
+                    entity.Rating,
+                    entity.Chips,
+                    entity.Coins,
+                    entity.PartiesCount,
+                    entity.WinPartiesCount,
+                    entity.TotalChipsPrize
+                ))
+                .ToListAsync();
+
+            return users;
+        }
+
+        public async void Test()
+        {
+            var t = Task.Run(async () =>
+            {
+                await Task.Delay(1000);
+                return "name";
+            });
+
+
+            var t2 = Task.Run(async () =>
+            {
+                await Task.Delay(1000);
+                return 5;
+            });
+
+            var r = Task.WhenAny(t, t2);
+        }
     }
 }
